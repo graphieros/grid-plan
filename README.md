@@ -8,7 +8,6 @@
 # grid-plan
 
 ![npm](https://img.shields.io/npm/v/grid-plan)
-![NPM](https://img.shields.io/npm/l/grid-plan)
 ![npm](https://img.shields.io/npm/dt/grid-plan)
 ![GitHub issues](https://img.shields.io/github/issues/graphieros/grid-plan)
 
