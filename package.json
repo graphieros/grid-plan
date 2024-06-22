@@ -1,0 +1,57 @@
+{
+  "name": "grid-plan",
+  "version": "0.0.1",
+  "private": false,
+  "type": "module",
+  "description": "A Vue3 dynamic 2d grid component ideal to view and arrange elements on a room, datacenter or rack blueprint.",
+  "keywords": [
+    "grid",
+    "vue",
+    "2d grid",
+    "plan",
+    "blueprint",
+    "room",
+    "datacenter",
+    "rack",
+    "component"
+  ],
+  "author": "Alec Lloyd Probert",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/graphieros/grid-plan"
+  },
+  "homepage": "https://grid-plan.graphieros.com/",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/grid-plan.umd.cjs",
+  "module": "./dist/grid-plan.js",
+  "exports": {
+    ".": {
+      "import": "./dist/grid-plan.js",
+      "export": "./dist/grid-plan.umd.cjs",
+      "types": "./dist/types/grid-plan.d.ts"
+    }
+  },
+  "scripts": {
+    "clean": "node cleanup.cjs",
+    "dev": "node add-dev-dep.cjs && npm i && vite",
+    "build": "npm run clean && vite build --mode production && node copy-types.cjs",
+    "preview": "vite preview",
+    "test:unit": "vitest",
+    "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
+    "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'"
+  },
+  "devDependencies": {
+    "vue": "^3.4.29",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "@vue/test-utils": "^2.4.6",
+    "cypress": "^13.12.0",
+    "jsdom": "^24.1.0",
+    "start-server-and-test": "^2.0.4",
+    "vite": "^5.3.1",
+    "vitest": "^1.6.0",
+    "grid-plan": "file:../grid-plan"
+  }
+}

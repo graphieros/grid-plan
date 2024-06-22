@@ -1,0 +1,21 @@
+{
+    "abscissaType": "alphabetic",
+    "coordinatesBackground": "#2A2A2A",
+    "coordinatesColor": "#8A8A8A",
+    "crosshairBackground": "#4A4A4A",
+    "fontFamily": "Arial",
+    "gridFill": "#3A3A3A",
+    "gridHeight": 20,
+    "gridHighlightColor": "#FFFFFF",
+    "gridStroke": "#1A1A1A",
+    "gridStrokeWidth": 0.02,
+    "gridWidth": 20,
+    "handleFill": "#FFFFFF",
+    "handleSize": 0.3,
+    "iconColor": "#1A1A1A",
+    "ordinatesType": "numeric",
+    "showCrosshair": true,
+    "tooltipColor": "#FFFFFF",
+    "useGradient": true,
+    "useShadow": true
+}
