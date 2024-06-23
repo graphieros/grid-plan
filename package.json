@@ -1,6 +1,6 @@
 {
   "name": "grid-plan",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": false,
   "type": "module",
   "description": "A Vue3 dynamic 2d grid component ideal to view and arrange elements on a room, datacenter or rack blueprint.",
