@@ -52,12 +52,12 @@ Or you can import it directly in your Vue file:
 
 ## Props
 
-| Prop name      | TS type        | Required                            | Description                                                 |
-| -------------- | -------------- | ----------------------------------- | ----------------------------------------------------------- |
-| availableTypes | GridPlanItem[] | YES                                 | The types of components that can be placed on the blueprint |
-| placedItems    | GridPlanItem[] | YES (can be empty)                  | Components already placed on the blueprint                  |
-| radonly        | boolean        | NO (default: false)                 | Blueprint will be readonly if true                          |
-| config         | GridPlanConfig | NO (default config will be applied) | Configuration object to customize looks                     |
+| Prop name      | TS type            | Required                            | Description                                                 |
+| -------------- | ------------------ | ----------------------------------- | ----------------------------------------------------------- |
+| availableTypes | GridPlanItemType[] | YES                                 | The types of components that can be placed on the blueprint |
+| placedItems    | GridPlanItem[]     | YES (can be empty)                  | Components already placed on the blueprint                  |
+| radonly        | boolean            | NO (default: false)                 | Blueprint will be readonly if true                          |
+| config         | GridPlanConfig     | NO (default config will be applied) | Configuration object to customize looks                     |
 
 ## Example
 
