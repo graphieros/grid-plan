@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, useSlots } from 'vue';
+import { icons } from '../icons';
+import { scaleSVGPath, parseSVG } from '../lib';
 
 const props = defineProps({
     /**
@@ -141,8 +143,8 @@ function findFirstAvailableSquare(gridWidth, gridHeight, occupiedSquares) {
         occupiedSquares.map(square => `${square.x},${square.y}`)
     );
 
-    for (let y = 0; y < gridHeight; y++) {
-        for (let x = 0; x < gridWidth; x++) {
+    for (let y = 0; y < gridHeight; y += 1) {
+        for (let x = 0; x < gridWidth; x += 1) {
             if (!occupiedSet.has(`${x},${y}`)) {
                 return { x, y };
             }
@@ -327,7 +329,17 @@ const highlightedTooltipPosition = computed(() => {
         y,
         textAnchor
     }
+});
+
+const iconKeys = computed(() => {
+    return Object.keys(icons)
 })
+
+function isValidIcon(icon) {
+    return iconKeys.value.includes(icon)
+}
+
+console.log(iconKeys.value.sort())
 
 </script>
 
@@ -475,7 +487,7 @@ const highlightedTooltipPosition = computed(() => {
             :y="placedItem.y"
             :height="placedItem.h"
             :width="placedItem.w"
-            :fill="placedItem.color"
+            :fill="placedItem.color || '#FFFFFF'"
             :stroke="config.gridStroke"
             :stroke-width="config.gridStrokeWidth"
             @click="selectItem(placedItem)"
@@ -509,7 +521,7 @@ const highlightedTooltipPosition = computed(() => {
             :y="entity.y" 
             :width="entity.w" 
             :height="entity.h" 
-            :fill="entity.color"
+            :fill="entity.color || '#FFFFFF'"
             :stroke="config.gridStroke"
             :stroke-width="config.gridStrokeWidth"
             @mousedown="isDown = true" 
@@ -548,24 +560,36 @@ const highlightedTooltipPosition = computed(() => {
                 :x="placedItem.x + placedItem.w / 2"
                 :y="placedItem.y + placedItem.h / 2 + 0.2"
                 :font-size="0.6"
-                :fill="config.iconColor"
+                :fill="placedItem.iconColor || config.iconColor"
                 style="pointer-events: none; user-select: none"
                 text-anchor="middle"
             >
                 <slot name="componentText" v-bind="{placedItem, iconColor: config.iconColor}"/>
             </text>
             <foreignObject
-                v-if="placedItem.x !== undefined && slots.componentIcon"
+                v-if="placedItem.x !== undefined && slots.componentIcon && !placedItem.icon"
                 :x="placedItem.x"
                 :y="placedItem.y"
                 :height="placedItem.h"
                 :width="placedItem.w"
                 style="pointer-events: none;"
             >
-                <div style="width: 100%; height:100%; position: relative;">
+                <div style="width: 100%; height:100%; display: flex; align-items:center; justify-content:center">
                     <slot name="componentIcon" v-bind="{ placedItem, iconColor: config.iconColor, maxSize: Math.min(placedItem.w, placedItem.h) }"/>
                 </div>
             </foreignObject>
+            <g v-if="placedItem.icon && isValidIcon(placedItem.icon)">
+                <path 
+                    v-for="path in parseSVG(icons[placedItem.icon])"
+                    style="pointer-events: none;"
+                    fill="none"
+                    stroke-width="0.06"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    :stroke="placedItem.iconColor || config.iconColor"
+                    :d="scaleSVGPath(path.d, 24, { x: placedItem.x + (placedItem.w / 2) - 0.5, y: placedItem.y + placedItem.h / 2 - 0.5})"
+                />
+            </g>
         </g>
 
         <!-- HANDLES -->
