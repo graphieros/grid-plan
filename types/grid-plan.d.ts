@@ -19,7 +19,6 @@ declare module "grid-plan" {
     }
 
     export type GridPlanItemType = {
-        [key: string]: string | number
         color?: string
         description: string
         icon?: string
