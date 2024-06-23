@@ -56,7 +56,7 @@ Or you can import it directly in your Vue file:
 | -------------- | -------------- | ----------------------------------- | ----------------------------------------------------------- |
 | availableTypes | GridPlanItem[] | YES                                 | The types of components that can be placed on the blueprint |
 | placedItems    | GridPlanItem[] | YES (can be empty)                  | Components already placed on the blueprint                  |
-| placedItems    | boolean        | NO (default: false)                 | Blueprint will be readonly if true                          |
+| radonly        | boolean        | NO (default: false)                 | Blueprint will be readonly if true                          |
 | config         | GridPlanConfig | NO (default config will be applied) | Configuration object to customize looks                     |
 
 ## Example
