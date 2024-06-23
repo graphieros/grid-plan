@@ -164,7 +164,7 @@ function unselected() {
     @created="createdItem"
     @unselect="unselected"
   >
-    <!-- Create your available types menu -->
+    <!-- Create your available types menu (target the .grid-plan-menu css class to style the menu container)-->
     <template #availableType="{ availableType }">
       <!-- The click event is managed by the component, that will select the type to be used when adding a component to the blueprint -->
       <button>{{ availableType.description }}</button>
