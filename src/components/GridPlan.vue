@@ -136,7 +136,7 @@ defineExpose({
 
 <template>
   <main>
-    <div class="flex flex-row gap-6 p-8">
+    <div class="grid-plan-menu">
       <div v-for="t in availableTypes" @click="setActiveType(t)">
         <slot name="availableType" v-bind="{ availableType: t }"/>
       </div>
