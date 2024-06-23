@@ -1,6 +1,8 @@
 <p align="center">
     <a href="https://grid-plan.graphieros.com/"><img src="https://vue-data-ui.graphieros.com/grid-plan.png"></a>
     <br>
+    <a href="https://grid-plan.graphieros.com/"><img src="https://vue-data-ui.graphieros.com/grid-plan2.png"></a>
+    <br>
     <br>
     <br>
 </p>
@@ -67,22 +69,25 @@ import { GridPlan } from "grid-plan";
 
 const availableTypes = ref([
   {
+    typeId: 1,
     color: "#3366DD",
     description: "server",
-    icon: "S",
-    typeId: 1,
+    icon: "server",
+    iconColor: "#FFFFFF",
   },
   {
+    typeId: 2,
     color: "#DD6633",
     description: "power",
-    icon: "P",
-    typeId: 2,
+    icon: "bolt",
+    iconColor: "#FFFFFF",
   },
   {
+    typeId: 3,
     color: "#71a4a8",
     description: "monitor",
-    icon: "M",
-    typeId: 3,
+    icon: "deviceLaptop",
+    iconColor: "#1A1A1A",
   },
 ]);
 
@@ -165,7 +170,7 @@ function unselected() {
       <button>{{ availableType.description }}</button>
     </template>
 
-    <!-- Customize the icon for component types -->
+    <!-- Use your own svg icons for component types (not necessary if the icon provided is part of the available icons) -->
     <template #componentIcon="{ placedItem, maxSize }">
       <svg
         v-if="placedItem.description === 'server'"
@@ -189,7 +194,6 @@ function unselected() {
         <path d="M11 8h6" />
         <path d="M11 16h6" />
       </svg>
-      <!-- You can create as many custom icons as there are types -->
     </template>
 
     <!-- Or use this slot to display a single letter or an icon font -->
@@ -220,3 +224,141 @@ function unselected() {
 | tooltipColor          | string                    | "#FFFFFF"    | The tooltip text color                             |
 | useGradient           | boolean                   | true         | Shows components with a subtle gradient            |
 | useShadow             | boolean                   | true         | Show selected item with a drop shadow              |
+
+## Icons
+
+A set of icons is provided by grid-plan. These icons are adapted from the great [Tabler icons](https://tablericons.com/) open source icon library.
+
+Icons are used in availableTypes:
+
+```js
+const availableTypes = ref([
+  {
+    color: '#6376DD',
+    description: 'router',
+    icon: 'router',
+    typeId: 1,
+    iconColor: '#FFFFFF'
+  },
+  {...}
+])
+```
+
+| Icon name           |
+| ------------------- |
+| airConditioning     |
+| alertTriangle       |
+| analyze             |
+| archive             |
+| armchair            |
+| award               |
+| bath                |
+| battery             |
+| bed                 |
+| bell                |
+| bellSchool          |
+| bolt                |
+| boltOff             |
+| books               |
+| bulb                |
+| bulfOff             |
+| burger              |
+| calculator          |
+| camera              |
+| cctv                |
+| chefHat             |
+| circleKey           |
+| circuitCapacitor    |
+| circuitCell         |
+| circuitGround       |
+| circuitSwitchClosed |
+| circuitSwitchOpen   |
+| clock               |
+| cloud               |
+| cloudComputing      |
+| coffee              |
+| cpu                 |
+| cricuitLoop         |
+| database            |
+| deviceDesktop       |
+| deviceDesktopOff    |
+| deviceDualScreen    |
+| deviceImac          |
+| deviceImacOff       |
+| deviceLaptop        |
+| deviceLaptopOff     |
+| deviceTablet        |
+| deviceTabletOff     |
+| deviceTv            |
+| deviceTvOff         |
+| deviceUsb           |
+| devicesPc           |
+| devicesPcOff        |
+| disabled            |
+| door                |
+| doorEnter           |
+| doorExit            |
+| elevator            |
+| elevatorOff         |
+| escalator           |
+| escalatorDown       |
+| escalatorUp         |
+| fingerprint         |
+| firstAidKit         |
+| folder              |
+| folders             |
+| headphones          |
+| headset             |
+| hexagon             |
+| home                |
+| key                 |
+| keyboard            |
+| leaf                |
+| lock                |
+| lockAccess          |
+| man                 |
+| microphone          |
+| microscope          |
+| network             |
+| networkOff          |
+| package             |
+| packages            |
+| paperclip           |
+| phone               |
+| plant               |
+| plugConnected       |
+| power               |
+| printer             |
+| printerOff          |
+| prism               |
+| propeller           |
+| propellerOff        |
+| reportAnalytics     |
+| robot               |
+| router              |
+| salad               |
+| server              |
+| serverBolt          |
+| serverCog           |
+| serverOff           |
+| shredder            |
+| sofa                |
+| solarPanel          |
+| soup                |
+| squareKey           |
+| stack               |
+| toilet              |
+| toiletPaper         |
+| toolsKitchen        |
+| trafficCone         |
+| trash               |
+| trolley             |
+| volume              |
+| wall                |
+| washMachine         |
+| wave                |
+| wifi                |
+| windMill            |
+| windmillOff         |
+| window              |
+| world               |
