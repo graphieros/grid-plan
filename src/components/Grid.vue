@@ -339,8 +339,6 @@ function isValidIcon(icon) {
     return iconKeys.value.includes(icon)
 }
 
-console.log(iconKeys.value.sort())
-
 </script>
 
 <template>
