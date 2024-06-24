@@ -457,18 +457,6 @@ function isValidIcon(icon) {
             :fill="'#FFFFFF20'"
         />
 
-        <text
-            v-if="hoveredRect && !isDown"
-            :text-anchor="highlightedTooltipPosition.textAnchor"
-            :x="highlightedTooltipPosition.x"
-            :y="highlightedTooltipPosition.y"
-            :font-size="0.6"
-            :fill="config.gridHighlightColor"
-            style="user-select: none;"
-        >
-            {{ highlightedCoordinates }}
-        </text>
-
         <!-- WALLS -->
         <rect 
             v-for="wall in walls"
@@ -489,6 +477,7 @@ function isValidIcon(icon) {
             :stroke="config.gridStroke"
             :stroke-width="config.gridStrokeWidth"
             @click="selectItem(placedItem)"
+            :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }`"
         />
 
         <defs>
@@ -540,18 +529,6 @@ function isValidIcon(icon) {
             />
         </g>
 
-        <text 
-            v-if="activeEntity && activeEntity.x !== undefined"
-            :x="entity.x + entity.w - entity.w / 2"
-            :y="entity.y + entity.h + 1"
-            :font-size="0.6"
-            :fill="config.tooltipColor"
-            style="pointer-events: none; user-select: none;"
-            text-anchor="middle"
-        >
-            {{ activeEntityCoordinates }}
-        </text>
-
         <g v-for="placedItem in [...items, entity]">
             <text 
                 v-if="placedItem.x !== undefined && slots.componentText"
@@ -559,8 +536,8 @@ function isValidIcon(icon) {
                 :y="placedItem.y + placedItem.h / 2 + 0.2"
                 :font-size="0.6"
                 :fill="placedItem.iconColor || config.iconColor"
-                style="pointer-events: none; user-select: none"
                 text-anchor="middle"
+                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }; pointer-events: none; user-select: none`"
             >
                 <slot name="componentText" v-bind="{placedItem, iconColor: config.iconColor}"/>
             </text>
@@ -570,7 +547,7 @@ function isValidIcon(icon) {
                 :y="placedItem.y"
                 :height="placedItem.h"
                 :width="placedItem.w"
-                style="pointer-events: none;"
+                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }; pointer-events: none; user-select: none`"
             >
                 <div style="width: 100%; height:100%; display: flex; align-items:center; justify-content:center">
                     <slot name="componentIcon" v-bind="{ placedItem, iconColor: config.iconColor, maxSize: Math.min(placedItem.w, placedItem.h) }"/>
@@ -579,13 +556,13 @@ function isValidIcon(icon) {
             <g v-if="placedItem.icon && isValidIcon(placedItem.icon)">
                 <path 
                     v-for="path in parseSVG(icons[placedItem.icon])"
-                    style="pointer-events: none;"
                     fill="none"
                     stroke-width="0.06"
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     :stroke="placedItem.iconColor || config.iconColor"
                     :d="scaleSVGPath(path.d, 24, { x: placedItem.x + (placedItem.w / 2) - 0.5, y: placedItem.y + placedItem.h / 2 - 0.5})"
+                    :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }; pointer-events: none; user-select: none`"
                 />
             </g>
         </g>
@@ -665,5 +642,45 @@ function isValidIcon(icon) {
                 style="pointer-events: none;"
             />
         </g>
+
+        <!-- TOOLTIPS -->
+        <text
+            v-if="hoveredRect && !isDown"
+            :text-anchor="highlightedTooltipPosition.textAnchor"
+            :x="highlightedTooltipPosition.x"
+            :y="highlightedTooltipPosition.y"
+            :font-size="0.6"
+            :fill="config.gridHighlightColor"
+            style="user-select: none;"
+        >
+            {{ highlightedCoordinates }}
+        </text>
+
+        <text 
+            v-if="activeEntity && activeEntity.x !== undefined"
+            :x="entity.x + entity.w - entity.w / 2"
+            :y="entity.y + entity.h + 0.8"
+            :font-size="0.6"
+            :fill="config.tooltipColor"
+            :stroke="'black'"
+            :stroke-width="0.011"
+            style="pointer-events: none; user-select: none;"
+            text-anchor="middle"
+        >
+            {{ activeEntityCoordinates }}
+        </text>
+        <text 
+            v-if="activeEntity && activeEntity.x !== undefined"
+            :x="entity.x + entity.w - entity.w / 2"
+            :y="entity.y + entity.h + 1.3"
+            :font-size="0.4"
+            :fill="config.tooltipColor"
+            style="pointer-events: none; user-select: none;"
+            :stroke="'black'"
+            :stroke-width="0.011"
+            text-anchor="middle"
+        >
+            {{ activeEntity.description }}
+        </text>
     </svg>
 </template>
