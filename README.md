@@ -121,6 +121,12 @@ const config = ref({
 });
 
 // Events
+
+function selectType(menuItem) {
+  // Triggered when a menu item is selected
+  console.log("SELECT TYPE", menuItem);
+}
+
 function change(item) {
   // Triggered whenever an item is changed
   console.log("CHANGED", item);
@@ -163,6 +169,7 @@ function unselected() {
     @select="selectItem"
     @created="createdItem"
     @unselect="unselected"
+    @selectType="selectType"
   >
     <!-- Create your available types menu (target the .grid-plan-menu css class to style the menu container)-->
     <template #availableType="{ availableType }">
