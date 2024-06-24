@@ -57,7 +57,8 @@ const emit = defineEmits([
   'delete',
   'select',
   'unselect',
-  'created'
+  'created',
+  'selectType'
 ])
 
 const items = ref(props.placedItems.map(item => {
@@ -109,6 +110,7 @@ const activeType = ref(availableTypes.value[0])
 
 function setActiveType(t) {
   activeType.value = t;
+  emit('selectType', t)
 }
 
 function deleteItem(item) {
