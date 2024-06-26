@@ -477,7 +477,7 @@ function isValidIcon(icon) {
             :stroke="config.gridStroke"
             :stroke-width="config.gridStrokeWidth"
             @click="selectItem(placedItem)"
-            :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }`"
+            :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }`"
         />
 
         <defs>
@@ -537,7 +537,7 @@ function isValidIcon(icon) {
                 :font-size="0.6"
                 :fill="placedItem.iconColor || config.iconColor"
                 text-anchor="middle"
-                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }; pointer-events: none; user-select: none`"
+                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
             >
                 <slot name="componentText" v-bind="{placedItem, iconColor: config.iconColor}"/>
             </text>
@@ -547,7 +547,7 @@ function isValidIcon(icon) {
                 :y="placedItem.y"
                 :height="placedItem.h"
                 :width="placedItem.w"
-                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }; pointer-events: none; user-select: none`"
+                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
             >
                 <div style="width: 100%; height:100%; display: flex; align-items:center; justify-content:center">
                     <slot name="componentIcon" v-bind="{ placedItem, iconColor: config.iconColor, maxSize: Math.min(placedItem.w, placedItem.h) }"/>
@@ -562,7 +562,7 @@ function isValidIcon(icon) {
                     stroke-linejoin="round"
                     :stroke="placedItem.iconColor || config.iconColor"
                     :d="scaleSVGPath(path.d, 24, { x: placedItem.x + (placedItem.w / 2) - 0.5, y: placedItem.y + placedItem.h / 2 - 0.5})"
-                    :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : '0.2' : '1' }; pointer-events: none; user-select: none`"
+                    :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
                 />
             </g>
         </g>

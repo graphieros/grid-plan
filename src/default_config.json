@@ -17,5 +17,8 @@
     "showCrosshair": true,
     "tooltipColor": "#FFFFFF",
     "useGradient": true,
-    "useShadow": true
+    "useShadow": true,
+    "useAccordionMenu": true,
+    "accordionMenuTitle": "Menu",
+    "nonSelectedOpacity": 0.3
 }

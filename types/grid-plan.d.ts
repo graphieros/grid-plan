@@ -39,6 +39,7 @@ declare module "grid-plan" {
     
     export type GridPlanConfig = {
         abscissaType?: "alphabetic" | "numeric"
+        accordionMenuTitle?: string
         coordinatesBackground?: string
         coordinatesColor?: string
         crosshairBackground?: string

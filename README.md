@@ -100,6 +100,7 @@ const placedItems = ref([
 // You can provide a partial config, as missing attributes will use defaults
 const config = ref({
   abscissaType: "alphabetic",
+  accordionMenuTitle: "Menu",
   coordinatesBackground: "#2A2A2A",
   coordinatesColor: "#8A8A8A",
   crosshairBackground: "#4A4A4A",
@@ -113,9 +114,11 @@ const config = ref({
   handleFill: "#FFFFFF",
   handleSize: 0.3,
   iconColor: "#1A1A1A",
+  nonSelectedOpacity: 0.3
   ordinatesType: "numeric",
   showCrosshair: true,
   tooltipColor: "#FFFFFF",
+  useAccordionMenu: true,
   useGradient: true,
   useShadow: true,
 });
@@ -211,26 +214,41 @@ function unselected() {
 
 ## Config details
 
-| Attribute             | TS type                   | Default      | Description                                        |
-| --------------------- | ------------------------- | ------------ | -------------------------------------------------- |
-| abscissaType          | "alphabetic" OR "numeric" | "alphabetic" | Display abscissa coordinates as letters or numbers |
-| coordinatesBackground | string                    | "#2A2A2A"    | Background color of the coordinates cells          |
-| coordinatesColor      | string                    | "#8A8A8A"    | Text color of the coordinates cells                |
-| crosshairBackground   | string                    | "#4A4A4A"    | Background color of the crosshair                  |
-| fontFamily            | string                    | "Arial"      | Font used for all elements in the component        |
-| gridFill              | string                    | "#3A3A3A"    | Background color of unused blueprint cells         |
-| gridHeight            | number                    | 20           | The height of the blueprint in cell units          |
-| gridHighlightColor    | string                    | "#FFFFFF"    | The contour of available cells on hover            |
-| gridStroke            | string                    | "#1A1A1A"    | The color of grid lines                            |
-| gridWidth             | number                    | 20           | The width of the blueprint in cell units           |
-| handleFill            | string                    | "#FFFFFF"    | The color of resize handles                        |
-| handleSize            | number                    | 0.3          | The handle size                                    |
-| iconColor             | string                    | "#1A1A1A"    | The text color when using the #componentText slot  |
-| ordinatesType         | "alphabetic" OR "numeric" | "numeric"    | Display ordinate coordinates as letters or numbers |
-| showCrosshair         | boolean                   | true         | Show crosshair when hovering available cells       |
-| tooltipColor          | string                    | "#FFFFFF"    | The tooltip text color                             |
-| useGradient           | boolean                   | true         | Shows components with a subtle gradient            |
-| useShadow             | boolean                   | true         | Show selected item with a drop shadow              |
+| Attribute             | TS type                   | Default      | Description                                                         |
+| --------------------- | ------------------------- | ------------ | ------------------------------------------------------------------- |
+| abscissaType          | "alphabetic" OR "numeric" | "alphabetic" | Display abscissa coordinates as letters or numbers                  |
+| accordionMenuTitle    | string                    | "Menu"       | Text content of detail summary                                      |
+| coordinatesBackground | string                    | "#2A2A2A"    | Background color of the coordinates cells                           |
+| coordinatesColor      | string                    | "#8A8A8A"    | Text color of the coordinates cells                                 |
+| crosshairBackground   | string                    | "#4A4A4A"    | Background color of the crosshair                                   |
+| fontFamily            | string                    | "Arial"      | Font used for all elements in the component                         |
+| gridFill              | string                    | "#3A3A3A"    | Background color of unused blueprint cells                          |
+| gridHeight            | number                    | 20           | The height of the blueprint in cell units                           |
+| gridHighlightColor    | string                    | "#FFFFFF"    | The contour of available cells on hover                             |
+| gridStroke            | string                    | "#1A1A1A"    | The color of grid lines                                             |
+| gridWidth             | number                    | 20           | The width of the blueprint in cell units                            |
+| handleFill            | string                    | "#FFFFFF"    | The color of resize handles                                         |
+| handleSize            | number                    | 0.3          | The handle size                                                     |
+| iconColor             | string                    | "#1A1A1A"    | The text color when using the #componentText slot                   |
+| nonSelectedOpacity    | number                    | 0.3          | The opacity of non selected components when a component is selected |
+| ordinatesType         | "alphabetic" OR "numeric" | "numeric"    | Display ordinate coordinates as letters or numbers                  |
+| showCrosshair         | boolean                   | true         | Show crosshair when hovering available cells                        |
+| tooltipColor          | string                    | "#FFFFFF"    | The tooltip text color                                              |
+| useAccordionMenu      | boolean                   | true         | Display the menu inside a details HTML element                      |
+| useGradient           | boolean                   | true         | Shows components with a subtle gradient                             |
+| useShadow             | boolean                   | true         | Show selected item with a drop shadow                               |
+
+## CSS classes
+
+Grid Plan does not ship css.
+To customize the styling of the menu, target the following css classes:
+
+```css
+.grid-plan-menu {
+}
+.grid-plan-menu__summary {
+} /* If useAccordionMenu is true */
+```
 
 ## Icons
 
