@@ -248,6 +248,8 @@ To customize the styling of the menu, target the following css classes:
 }
 .grid-plan-menu__summary {
 } /* If useAccordionMenu is true */
+.grid-plan-menu__body {
+} /* If useAccordionMenu is true */
 ```
 
 ## Icons

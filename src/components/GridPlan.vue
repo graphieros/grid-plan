@@ -142,8 +142,10 @@ defineExpose({
       <summary class="grid-plan-menu__summary">
         {{ finalConfig.accordionMenuTitle }}
       </summary>
-      <div v-for="t in availableTypes" @click="setActiveType(t)">
-        <slot name="availableType" v-bind="{ availableType: t }"/>
+      <div class="grid-plan-menu__body">
+        <div v-for="t in availableTypes" @click="setActiveType(t)">
+          <slot name="availableType" v-bind="{ availableType: t }"/>
+        </div>
       </div>
     </details>
 
