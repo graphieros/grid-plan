@@ -1,5 +1,6 @@
 {
     "abscissaType": "alphabetic",
+    "accordionMenuTitle": "Menu",
     "coordinatesBackground": "#2A2A2A",
     "coordinatesColor": "#8A8A8A",
     "crosshairBackground": "#4A4A4A",
@@ -13,12 +14,11 @@
     "handleFill": "#FFFFFF",
     "handleSize": 0.3,
     "iconColor": "#1A1A1A",
+    "nonSelectedOpacity": 0.3,
     "ordinatesType": "numeric",
     "showCrosshair": true,
     "tooltipColor": "#FFFFFF",
-    "useGradient": true,
-    "useShadow": true,
     "useAccordionMenu": true,
-    "accordionMenuTitle": "Menu",
-    "nonSelectedOpacity": 0.3
+    "useGradient": true,
+    "useShadow": true
 }

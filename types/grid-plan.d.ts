@@ -53,9 +53,11 @@ declare module "grid-plan" {
         handleFill?: string
         handleSize?: number
         iconColor?: string
+        nonSelectedOpacity?: number
         ordinatesType?: "alphabetic" | "numeric"
         showCrosshair?: boolean
         tooltipColor?: string
+        useAccorionMenu?: boolean
         useGradient?: boolean
         useShadow?: boolean
     }
