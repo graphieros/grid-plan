@@ -184,6 +184,18 @@ function createdItem(item) {
       @created="createdItem"
       @unselect="unselectItem"
     >
+      <template #inventory="{ item, deleteItem, focusItem, isFocused }">
+        <div :style="`display: flex; flex-direction:row; flex-wrap: wrap; border: 1px solid ${item.color};width: fit-content; padding: 6px 12px; gap:6px; ${isFocused ? 'background: #FFFFFF20' : ''}`">
+          <span>{{ item.description }}</span>
+          <span>x:{{ item.x }}</span>
+          <span>y:{{ item.y }}</span>
+          <span>h:{{ item.h }}</span>
+          <span>w:{{ item.w }}</span>
+          <button @click="deleteItem">DELETE</button>
+          <button @click="focusItem">{{ isFocused ? 'UNFOCUS' : 'FOCUS' }}</button>
+        </div>
+      </template>
+
       <template #availableType="{ availableType }">
         {{ availableType.description }}
       </template>
@@ -231,5 +243,14 @@ header {
     place-items: flex-start;
     flex-wrap: wrap;
   }
+}
+</style>
+
+<style>
+.grid-plan-inventory__body {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  flex-wrap: wrap;
 }
 </style>

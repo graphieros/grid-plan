@@ -130,6 +130,17 @@ function getItems() {
   return items.value;
 }
 
+function focusItem(item) {
+  if(entity.value.id === item.id) {
+    entity.value = {}
+    step.value += 1;
+  } else {
+    entity.value = {}
+    step.value += 1;
+    entity.value = item
+  }
+}
+
 defineExpose({
   getItems
 })
@@ -154,6 +165,17 @@ defineExpose({
         <slot name="availableType" v-bind="{ availableType: t }"/>
       </div>
     </div>
+
+    <details v-if="finalConfig.showInventory && items.length" class="grid-plan-inventory">
+        <summary class="grid-plan-inventory__summary">
+          {{ finalConfig.inventoryTitle }}
+        </summary>
+        <div class="grid-plan-inventory__body">
+          <div v-for="item in items">
+            <slot name="inventory" v-bind="{ item, deleteItem: () => deleteItem(item), focusItem: () => focusItem(item), isFocused: entity && entity.id === item.id }"/>
+          </div>
+        </div>
+    </details>
     <Grid
       :readonly="readonly"
       :key="step" 

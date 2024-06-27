@@ -21,6 +21,7 @@ grid-plan ships with:
 
 - config options to customize the looks of your blueprint
 - slots to customize icons related to component types
+- slots to create your available components menu and your inventory
 
 ## Installation
 
@@ -174,10 +175,27 @@ function unselected() {
     @unselect="unselected"
     @selectType="selectType"
   >
-    <!-- Create your available types menu (target the .grid-plan-menu css class to style the menu container)-->
+    <!-- Create your available types menu -->
     <template #availableType="{ availableType }">
       <!-- The click event is managed by the component, that will select the type to be used when adding a component to the blueprint -->
       <button>{{ availableType.description }}</button>
+    </template>
+
+    <!-- Create your inventory, which will be displayed inside a details element (target the .grid-plan-inventory css class to style) -->
+    <template #inventory="{ item, deleteItem, focusItem, isFocused }">
+      <div
+        :style="`display: flex; flex-direction:row; flex-wrap: wrap; border: 1px solid ${item.color};width: fit-content; padding: 6px 12px; gap:6px; ${isFocused ? 'background: #FFFFFF20' : ''}`"
+      >
+        <span>{{ item.description }}</span>
+        <span>x:{{ item.x }}</span>
+        <span>y:{{ item.y }}</span>
+        <span>h:{{ item.h }}</span>
+        <span>w:{{ item.w }}</span>
+        <button @click="deleteItem">DELETE</button>
+        <button @click="focusItem">
+          {{ isFocused ? 'UNFOCUS' : 'FOCUS' }}
+        </button>
+      </div>
     </template>
 
     <!-- Use your own svg icons for component types (not necessary if the icon provided is part of the available icons) -->
@@ -230,9 +248,11 @@ function unselected() {
 | handleFill            | string                    | "#FFFFFF"    | The color of resize handles                                         |
 | handleSize            | number                    | 0.3          | The handle size                                                     |
 | iconColor             | string                    | "#1A1A1A"    | The text color when using the #componentText slot                   |
+| inventoryTitle        | string                    | "Inventory"  | The text content of the inventory details summary element           |
 | nonSelectedOpacity    | number                    | 0.3          | The opacity of non selected components when a component is selected |
 | ordinatesType         | "alphabetic" OR "numeric" | "numeric"    | Display ordinate coordinates as letters or numbers                  |
 | showCrosshair         | boolean                   | true         | Show crosshair when hovering available cells                        |
+| showInventory         | boolean                   | true         | Show inventory of placed components inside a details HTML element   |
 | tooltipColor          | string                    | "#FFFFFF"    | The tooltip text color                                              |
 | useAccordionMenu      | boolean                   | true         | Display the menu inside a details HTML element                      |
 | useGradient           | boolean                   | true         | Shows components with a subtle gradient                             |
@@ -241,7 +261,7 @@ function unselected() {
 ## CSS classes
 
 Grid Plan does not ship css.
-To customize the styling of the menu, target the following css classes:
+To customize the styling of the menu and inventory, target the following css classes:
 
 ```css
 .grid-plan-menu {
@@ -250,6 +270,12 @@ To customize the styling of the menu, target the following css classes:
 } /* If useAccordionMenu is true */
 .grid-plan-menu__body {
 } /* If useAccordionMenu is true */
+.grid-plan-inventory {
+}
+.grid-plan-inventory__summary {
+}
+.grid-plan-inventory__body {
+}
 ```
 
 ## Icons
