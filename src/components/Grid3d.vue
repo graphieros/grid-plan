@@ -73,11 +73,12 @@ const init3DScene = () => {
     scene.add(ambientLight);
 
     gridHelper = new THREE.GridHelper(
-        width.value, 
-        height.value,
+        Math.max(height.value, width.value), 
+        Math.max(height.value, width.value), 
         convertColorToHex(props.config.gridStroke).slice(0, -2),
         convertColorToHex(props.config.gridStroke).slice(0, -2),
     );
+
     scene.add(gridHelper);
 
     raycaster = new THREE.Raycaster();
@@ -105,6 +106,8 @@ const addFloor = () => {
 };
 
 const renderItems = () => {
+    const SPACING = 0.1;
+
     while (scene.children.length > 3) { 
         const child = scene.children[scene.children.length - 1];
         scene.remove(child);
@@ -114,7 +117,7 @@ const renderItems = () => {
 
     [...props.items, props.activeEntity].forEach(item => {
         if (item && item.w && item.h) {
-            const geometry = new THREE.BoxGeometry(item.w, 1, item.h);
+            const geometry = new THREE.BoxGeometry(item.w - SPACING, 1, item.h - SPACING);
             const material = new THREE.MeshStandardMaterial({
                 color: item.color, 
                 metalness: 0.7, 
@@ -140,7 +143,6 @@ const renderItems = () => {
         }
     });
 };
-
 
 const animate = () => {
     requestAnimationFrame(animate);
@@ -175,17 +177,17 @@ const onMouseMove = (event) => {
     }
 };
 
-
 const onResize = () => {
     if (container.value && renderer && camera) {
-        const width = container.value.clientWidth;
-        const height = container.value.clientHeight;
-        renderer.setSize(width, height);
-        camera.aspect = width / height;
+        const newWidth = container.value.clientWidth;
+        const newHeight = container.value.clientHeight;
+        camera.aspect = newWidth / newHeight;
         camera.updateProjectionMatrix();
+        renderer.setSize(newWidth, newHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.render(scene, camera);
     }
 };
-
 const selectedItem = ref(null);
 
 const onClick = (event) => {
@@ -216,6 +218,11 @@ onMounted(() => {
     init3DScene();
     window.addEventListener('resize', onResize);
     canvas.value.addEventListener('click', onClick); 
+
+    const resizeObserver = new ResizeObserver(onResize);
+    if (container.value) {
+        resizeObserver.observe(container.value)
+    }
 });
 
 onBeforeUnmount(() => {
@@ -258,7 +265,8 @@ watch(() => props.activeEntity, () => {
             width: '100%',
             height: '100%',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            resize: 'both'
         }"
     >
         <canvas 
