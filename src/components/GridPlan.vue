@@ -200,7 +200,7 @@ defineExpose({
     </details>
     <Grid
       :readonly="readonly"
-      :key="step" 
+      :key="`2d_${step}`" 
       :items="items" 
       :active-entity="entity"
       :config="finalConfig"
@@ -223,7 +223,7 @@ defineExpose({
   <Grid3d
     v-if="finalConfig.grid3dPosition === 'bottom' && finalConfig.showGrid3d"
     :items="items" 
-    :key="step"
+    :key="`3d_${step}`"
     :active-entity="entity"
     :config="finalConfig"
     :readonly="readonly"
