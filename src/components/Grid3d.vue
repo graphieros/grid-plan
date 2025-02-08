@@ -263,11 +263,13 @@ watch(() => props.activeEntity, () => {
         ref="container"
         :style="{
             width: '100%',
+            maxWidth: '100%',
             height: '100%',
             position: 'relative',
             overflow: 'hidden',
             resize: 'both'
         }"
+        class="grid-plan-grid-3d"
     >
         <canvas 
             ref="canvas" 

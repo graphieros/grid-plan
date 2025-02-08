@@ -342,345 +342,364 @@ function isValidIcon(icon) {
 </script>
 
 <template>
-    <svg :viewBox="`-1 -1 ${width+2} ${height+2}`" width="100%" ref="SVG" @mousemove="move" @mouseup="drop" @touchmove="move" 
-        @touchend="drop" :style="`overflow: visible; font-family:${config.fontFamily}`">
-        <!-- GRID COORDINATES -->
-        <g v-for="(absCord, i) in gridCoordinates.abs">
-            <rect
-                :x="i"
-                :y="-1"
+    <div
+        :style="{
+            width: '100%',
+            maxWidth: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            resize: 'horizontal'
+        }"
+        class="grid-plan-grid"
+    >
+
+        <svg :viewBox="`-1 -1 ${width+2} ${height+2}`" ref="SVG" @mousemove="move" @mouseup="drop" @touchmove="move" 
+            @touchend="drop" 
+            :style="{
+                overflow: 'visible',
+                fontFamily: config.fontFamily,
+                width: '100%',
+            }"
+        >
+            <!-- GRID COORDINATES -->
+            <g v-for="(absCord, i) in gridCoordinates.abs">
+                <rect
+                    :x="i"
+                    :y="-1"
+                    :height="1"
+                    :width="1"
+                    :fill="config.coordinatesBackground"
+                    :stroke="config.gridStroke"
+                    :stroke-width="config.gridStrokeWidth"
+                />       
+                <text 
+                    :x="i + 0.5"
+                    :y="-0.3"
+                    text-anchor="middle"
+                    :fill="config.coordinatesColor"
+                    font-size="0.5"
+                    style="user-select: none;"
+                >
+                    {{ absCord }}
+                </text>
+            </g>
+            <g v-for="(absCord, i) in gridCoordinates.abs">
+                <rect
+                    :x="i"
+                    :y="config.gridHeight"
+                    :height="1"
+                    :width="1"
+                    :fill="config.coordinatesBackground"
+                    :stroke="config.gridStroke"
+                    :stroke-width="config.gridStrokeWidth"
+                />  
+                <text 
+                    :x="i + 0.5"
+                    :y="config.gridHeight + 0.7"
+                    text-anchor="middle"
+                    :fill="config.coordinatesColor"
+                    font-size="0.5"
+                    style="user-select: none;"
+                >
+                    {{ absCord }}
+                </text>
+            </g>
+            <g v-for="(ordCord, i) in gridCoordinates.ord">
+                <rect
+                    :x="-1"
+                    :y="i"
+                    :height="1"
+                    :width="1"
+                    :fill="config.coordinatesBackground"
+                    :stroke="config.gridStroke"
+                    :stroke-width="config.gridStrokeWidth"
+                />  
+                <text
+                    :x="-0.1"
+                    :y="i + 0.7"
+                    text-anchor="end"
+                    :fill="config.coordinatesColor"
+                    font-size="0.5"
+                    style="user-select: none;"
+                >
+                    {{ ordCord }}
+                </text>
+            </g>
+            <g v-for="(ordCord, i) in gridCoordinates.ord">
+                <rect
+                    :x="config.gridWidth"
+                    :y="i"
+                    :height="1"
+                    :width="1"
+                    :fill="config.coordinatesBackground"
+                    :stroke="config.gridStroke"
+                    :stroke-width="config.gridStrokeWidth"
+                />  
+                <text 
+                    :x="config.gridWidth + 0.1"
+                    :y="i + 0.7"
+                    text-anchor="start"
+                    :fill="config.coordinatesColor"
+                    font-size="0.5"
+                    style="user-select: none;"
+                >
+                    {{ ordCord }}
+                </text>
+            </g>
+
+            <!-- GRID RECTS -->
+            <rect 
+                v-for="rect in gridRects" 
+                :x="rect.x"
+                :y="rect.y"
                 :height="1"
                 :width="1"
-                :fill="config.coordinatesBackground"
                 :stroke="config.gridStroke"
                 :stroke-width="config.gridStrokeWidth"
-            />       
-            <text 
-                :x="i + 0.5"
-                :y="-0.3"
-                text-anchor="middle"
-                :fill="config.coordinatesColor"
-                font-size="0.5"
-                style="user-select: none;"
-            >
-                {{ absCord }}
-            </text>
-        </g>
-        <g v-for="(absCord, i) in gridCoordinates.abs">
-            <rect
-                :x="i"
-                :y="config.gridHeight"
+                :fill="hoveredRect && !isDown && (hoveredRect.x === rect.x || hoveredRect.y === rect.y) ? config.crosshairBackground : config.gridFill"
+                @click="triggerAction(rect)"
+                @mouseover="hoveredRect = rect"
+                @mouseleave="hoveredRect = null"
+            />
+
+            <rect 
+                v-if="hoveredRect && !isDown"
+                style="pointer-events: none;"
+                :x="hoveredRect.x"
+                :y="hoveredRect.y"
                 :height="1"
                 :width="1"
-                :fill="config.coordinatesBackground"
-                :stroke="config.gridStroke"
-                :stroke-width="config.gridStrokeWidth"
-            />  
-            <text 
-                :x="i + 0.5"
-                :y="config.gridHeight + 0.7"
-                text-anchor="middle"
-                :fill="config.coordinatesColor"
-                font-size="0.5"
-                style="user-select: none;"
-            >
-                {{ absCord }}
-            </text>
-        </g>
-        <g v-for="(ordCord, i) in gridCoordinates.ord">
-            <rect
-                :x="-1"
-                :y="i"
+                :stroke="config.gridHighlightColor"
+                :stroke-width="config.gridStrokeWidth * 2"
+                :fill="'#FFFFFF20'"
+            />
+
+            <!-- WALLS -->
+            <rect 
+                v-for="wall in walls"
+                :x="wall.x"
+                :y="wall.y"
                 :height="1"
                 :width="1"
-                :fill="config.coordinatesBackground"
-                :stroke="config.gridStroke"
-                :stroke-width="config.gridStrokeWidth"
-            />  
-            <text
-                :x="-0.1"
-                :y="i + 0.7"
-                text-anchor="end"
-                :fill="config.coordinatesColor"
-                font-size="0.5"
-                style="user-select: none;"
-            >
-                {{ ordCord }}
-            </text>
-        </g>
-        <g v-for="(ordCord, i) in gridCoordinates.ord">
-            <rect
-                :x="config.gridWidth"
-                :y="i"
-                :height="1"
-                :width="1"
-                :fill="config.coordinatesBackground"
-                :stroke="config.gridStroke"
-                :stroke-width="config.gridStrokeWidth"
-            />  
-            <text 
-                :x="config.gridWidth + 0.1"
-                :y="i + 0.7"
-                text-anchor="start"
-                :fill="config.coordinatesColor"
-                font-size="0.5"
-                style="user-select: none;"
-            >
-                {{ ordCord }}
-            </text>
-        </g>
+                fill="transparent"
+            />
 
-        <!-- GRID RECTS -->
-        <rect 
-            v-for="rect in gridRects" 
-            :x="rect.x"
-            :y="rect.y"
-            :height="1"
-            :width="1"
-            :stroke="config.gridStroke"
-            :stroke-width="config.gridStrokeWidth"
-            :fill="hoveredRect && !isDown && (hoveredRect.x === rect.x || hoveredRect.y === rect.y) ? config.crosshairBackground : config.gridFill"
-            @click="triggerAction(rect)"
-            @mouseover="hoveredRect = rect"
-            @mouseleave="hoveredRect = null"
-        />
-
-        <rect 
-            v-if="hoveredRect && !isDown"
-            style="pointer-events: none;"
-            :x="hoveredRect.x"
-            :y="hoveredRect.y"
-            :height="1"
-            :width="1"
-            :stroke="config.gridHighlightColor"
-            :stroke-width="config.gridStrokeWidth * 2"
-            :fill="'#FFFFFF20'"
-        />
-
-        <!-- WALLS -->
-        <rect 
-            v-for="wall in walls"
-            :x="wall.x"
-            :y="wall.y"
-            :height="1"
-            :width="1"
-            fill="transparent"
-        />
-
-        <rect 
-            v-for="placedItem in items"
-            :x="placedItem.x"
-            :y="placedItem.y"
-            :height="placedItem.h"
-            :width="placedItem.w"
-            :fill="placedItem.color || '#FFFFFF'"
-            :stroke="config.gridStroke"
-            :stroke-width="config.gridStrokeWidth"
-            @click="selectItem(placedItem)"
-            :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }`"
-        />
-
-        <defs>
-            <radialGradient id="entityGradient" cx="30%" cy="30%" fx="0%" fy="0%">
-                <stop offset="0%" stop-color="#FFFFFF00" />
-                <stop offset="100%" stop-color="#FFFFFF20" />
-            </radialGradient>
-        </defs>
-
-        <g v-if="config.useGradient">
             <rect 
                 v-for="placedItem in items"
-                :x="placedItem.x + 0.2"
-                :y="placedItem.y + 0.2"
-                :height="placedItem.h - 0.4"
-                :width="placedItem.w - 0.4"
-                fill="url(#entityGradient)"
-                stroke="none"
-                style="pointer-events: none;"
-            />
-        </g>
-
-
-        <!-- ACTIVE ENTITY -->
-        <rect
-            v-if="activeEntity && activeEntity.x !== undefined"
-            :x="entity.x" 
-            :y="entity.y" 
-            :width="entity.w" 
-            :height="entity.h" 
-            :fill="entity.color || '#FFFFFF'"
-            :stroke="config.gridStroke"
-            :stroke-width="config.gridStrokeWidth"
-            @mousedown="isDown = true" 
-            @touchstart="isDown = true"
-            @click="unselect"
-            :style="`cursor: ${readonly ? 'default' : 'move'}; ${config.useShadow ? '-webkit-filter: drop-shadow(0px 1px 0.5px rgba(0, 0, 0, 0.6)); filter: drop-shadow(0px 0px 0.5px rgba(0, 0, 0, 0.6))' : ''}`"
-        />
-
-        <g v-if="config.useGradient && activeEntity && activeEntity.x !== undefined">
-            <rect 
-                :x="entity.x + 0.2"
-                :y="entity.y + 0.2"
-                :height="entity.h - 0.4"
-                :width="entity.w - 0.4"
-                fill="url(#entityGradient)"
-                stroke="none"
-                style="pointer-events: none;"
-            />
-        </g>
-
-        <g v-for="placedItem in [...items, entity]">
-            <text 
-                v-if="placedItem.x !== undefined && slots.componentText"
-                :x="placedItem.x + placedItem.w / 2"
-                :y="placedItem.y + placedItem.h / 2 + 0.2"
-                :font-size="0.6"
-                :fill="placedItem.iconColor || config.iconColor"
-                text-anchor="middle"
-                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
-            >
-                <slot name="componentText" v-bind="{placedItem, iconColor: config.iconColor}"/>
-            </text>
-            <foreignObject
-                v-if="placedItem.x !== undefined && slots.componentIcon && !placedItem.icon"
                 :x="placedItem.x"
                 :y="placedItem.y"
                 :height="placedItem.h"
                 :width="placedItem.w"
-                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
-            >
-                <div style="width: 100%; height:100%; display: flex; align-items:center; justify-content:center">
-                    <slot name="componentIcon" v-bind="{ placedItem, iconColor: config.iconColor, maxSize: Math.min(placedItem.w, placedItem.h) }"/>
-                </div>
-            </foreignObject>
-            <g v-if="placedItem.icon && isValidIcon(placedItem.icon)">
-                <path 
-                    v-for="path in parseSVG(icons[placedItem.icon])"
-                    fill="none"
-                    stroke-width="0.06"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    :stroke="placedItem.iconColor || config.iconColor"
-                    :d="scaleSVGPath(path.d, 24, { x: placedItem.x + (placedItem.w / 2) - 0.5, y: placedItem.y + placedItem.h / 2 - 0.5})"
-                    :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
+                :fill="placedItem.color || '#FFFFFF'"
+                :stroke="config.gridStroke"
+                :stroke-width="config.gridStrokeWidth"
+                @click="selectItem(placedItem)"
+                :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }`"
+            />
+
+            <defs>
+                <radialGradient id="entityGradient" cx="30%" cy="30%" fx="0%" fy="0%">
+                    <stop offset="0%" stop-color="#FFFFFF00" />
+                    <stop offset="100%" stop-color="#FFFFFF20" />
+                </radialGradient>
+            </defs>
+
+            <g v-if="config.useGradient">
+                <rect 
+                    v-for="placedItem in items"
+                    :x="placedItem.x + 0.2"
+                    :y="placedItem.y + 0.2"
+                    :height="placedItem.h - 0.4"
+                    :width="placedItem.w - 0.4"
+                    fill="url(#entityGradient)"
+                    stroke="none"
+                    style="pointer-events: none;"
                 />
             </g>
-        </g>
 
-        <!-- HANDLES -->
-        <g v-if="activeEntity && activeEntity.x !== undefined && !readonly">
-            <rect 
-                :x="entity.x - config.handleSize / 2" 
-                :y="entity.y - config.handleSize / 2" 
-                fill="white" 
-                :height="config.handleSize" 
-                :width="config.handleSize" 
-                @mousedown.prevent="startResize('top-left')"
-                @touchstart.prevent="startResize('top-left')"
-                style="cursor: nwse-resize"
-            />
-            <rect 
-                :x="entity.x + entity.w - config.handleSize / 2" 
-                :y="entity.y - config.handleSize / 2" 
-                fill="white" 
-                :height="config.handleSize" 
-                :width="config.handleSize" 
-                @mousedown.prevent="startResize('top-right')"
-                @touchstart.prevent="startResize('top-right')"
-                style="cursor: nesw-resize"
-            />
-            <rect 
-                :x="entity.x - config.handleSize / 2" 
-                :y="entity.y + entity.h - config.handleSize / 2" 
-                fill="white" 
-                :height="config.handleSize" 
-                :width="config.handleSize" 
-                @mousedown.prevent="startResize('bottom-left')"
-                @touchstart.prevent="startResize('bottom-left')"
-                style="cursor: nesw-resize"
-            />
-            <rect 
-                :x="entity.x + entity.w - config.handleSize / 2" 
-                :y="entity.y + entity.h - config.handleSize / 2" 
-                fill="white" 
-                :height="config.handleSize" 
-                :width="config.handleSize" 
-                @mousedown.prevent="startResize('bottom-right')"
-                @touchstart.prevent="startResize('bottom-right')"
-                style="cursor: nwse-resize"
-            />
-        </g>
 
-        <!-- BUTTONS -->
-        <g v-if="!readonly && activeEntity && activeEntity.x !== undefined">        
-            <circle 
-                :cx="entity.x + entity.w - 0.5"
-                :cy="entity.y - 1"
-                :r="0.5"
-                :fill="'#CCCCCC66'"
-                @click="deleteEntity"
-                style="cursor: pointer"
+            <!-- ACTIVE ENTITY -->
+            <rect
+                v-if="activeEntity && activeEntity.x !== undefined"
+                :x="entity.x" 
+                :y="entity.y" 
+                :width="entity.w" 
+                :height="entity.h" 
+                :fill="entity.color || '#FFFFFF'"
+                :stroke="config.gridStroke"
+                :stroke-width="config.gridStrokeWidth"
+                @mousedown="isDown = true" 
+                @touchstart="isDown = true"
+                @click="unselect"
+                :style="`cursor: ${readonly ? 'default' : 'move'}; ${config.useShadow ? '-webkit-filter: drop-shadow(0px 1px 0.5px rgba(0, 0, 0, 0.6)); filter: drop-shadow(0px 0px 0.5px rgba(0, 0, 0, 0.6))' : ''}`"
             />
-            <line
-                :x1="entity.x + entity.w - 0.75"
-                :x2="entity.x + entity.w - 0.25"
-                :y1="entity.y - 0.75"
-                :y2="entity.y - 1.25"
-                :stroke="'white'"
-                :stroke-width="0.09"
-                stroke-linecap="round"
-                style="pointer-events: none;"
-            />
-            <line
-                :x2="entity.x + entity.w - 0.75"
-                :x1="entity.x + entity.w - 0.25"
-                :y1="entity.y - 0.75"
-                :y2="entity.y - 1.25"
-                :stroke="'white'"
-                :stroke-width="0.09"
-                stroke-linecap="round"
-                style="pointer-events: none;"
-            />
-        </g>
 
-        <!-- TOOLTIPS -->
-        <text
-            v-if="hoveredRect && !isDown"
-            :text-anchor="highlightedTooltipPosition.textAnchor"
-            :x="highlightedTooltipPosition.x"
-            :y="highlightedTooltipPosition.y"
-            :font-size="0.6"
-            :fill="config.gridHighlightColor"
-            style="user-select: none;"
-        >
-            {{ highlightedCoordinates }}
-        </text>
+            <g v-if="config.useGradient && activeEntity && activeEntity.x !== undefined">
+                <rect 
+                    :x="entity.x + 0.2"
+                    :y="entity.y + 0.2"
+                    :height="entity.h - 0.4"
+                    :width="entity.w - 0.4"
+                    fill="url(#entityGradient)"
+                    stroke="none"
+                    style="pointer-events: none;"
+                />
+            </g>
 
-        <text 
-            v-if="activeEntity && activeEntity.x !== undefined"
-            :x="entity.x + entity.w - entity.w / 2"
-            :y="entity.y + entity.h + 0.8"
-            :font-size="0.6"
-            :fill="config.tooltipColor"
-            :stroke="'black'"
-            :stroke-width="0.011"
-            style="pointer-events: none; user-select: none;"
-            text-anchor="middle"
-        >
-            {{ activeEntityCoordinates }}
-        </text>
-        <text 
-            v-if="activeEntity && activeEntity.x !== undefined"
-            :x="entity.x + entity.w - entity.w / 2"
-            :y="entity.y + entity.h + 1.3"
-            :font-size="0.4"
-            :fill="config.tooltipColor"
-            style="pointer-events: none; user-select: none;"
-            :stroke="'black'"
-            :stroke-width="0.011"
-            text-anchor="middle"
-        >
-            {{ activeEntity.description }}
-        </text>
-    </svg>
+            <g v-for="placedItem in [...items, entity]">
+                <text 
+                    v-if="placedItem.x !== undefined && slots.componentText"
+                    :x="placedItem.x + placedItem.w / 2"
+                    :y="placedItem.y + placedItem.h / 2 + 0.2"
+                    :font-size="0.6"
+                    :fill="placedItem.iconColor || config.iconColor"
+                    text-anchor="middle"
+                    :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
+                >
+                    <slot name="componentText" v-bind="{placedItem, iconColor: config.iconColor}"/>
+                </text>
+                <foreignObject
+                    v-if="placedItem.x !== undefined && slots.componentIcon && !placedItem.icon"
+                    :x="placedItem.x"
+                    :y="placedItem.y"
+                    :height="placedItem.h"
+                    :width="placedItem.w"
+                    :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
+                >
+                    <div style="width: 100%; height:100%; display: flex; align-items:center; justify-content:center">
+                        <slot name="componentIcon" v-bind="{ placedItem, iconColor: config.iconColor, maxSize: Math.min(placedItem.w, placedItem.h) }"/>
+                    </div>
+                </foreignObject>
+                <g v-if="placedItem.icon && isValidIcon(placedItem.icon)">
+                    <path 
+                        v-for="path in parseSVG(icons[placedItem.icon])"
+                        fill="none"
+                        stroke-width="0.06"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        :stroke="placedItem.iconColor || config.iconColor"
+                        :d="scaleSVGPath(path.d, 24, { x: placedItem.x + (placedItem.w / 2) - 0.5, y: placedItem.y + placedItem.h / 2 - 0.5})"
+                        :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
+                    />
+                </g>
+            </g>
+
+            <!-- HANDLES -->
+            <g v-if="activeEntity && activeEntity.x !== undefined && !readonly">
+                <rect 
+                    :x="entity.x - config.handleSize / 2" 
+                    :y="entity.y - config.handleSize / 2" 
+                    fill="white" 
+                    :height="config.handleSize" 
+                    :width="config.handleSize" 
+                    @mousedown.prevent="startResize('top-left')"
+                    @touchstart.prevent="startResize('top-left')"
+                    style="cursor: nwse-resize"
+                />
+                <rect 
+                    :x="entity.x + entity.w - config.handleSize / 2" 
+                    :y="entity.y - config.handleSize / 2" 
+                    fill="white" 
+                    :height="config.handleSize" 
+                    :width="config.handleSize" 
+                    @mousedown.prevent="startResize('top-right')"
+                    @touchstart.prevent="startResize('top-right')"
+                    style="cursor: nesw-resize"
+                />
+                <rect 
+                    :x="entity.x - config.handleSize / 2" 
+                    :y="entity.y + entity.h - config.handleSize / 2" 
+                    fill="white" 
+                    :height="config.handleSize" 
+                    :width="config.handleSize" 
+                    @mousedown.prevent="startResize('bottom-left')"
+                    @touchstart.prevent="startResize('bottom-left')"
+                    style="cursor: nesw-resize"
+                />
+                <rect 
+                    :x="entity.x + entity.w - config.handleSize / 2" 
+                    :y="entity.y + entity.h - config.handleSize / 2" 
+                    fill="white" 
+                    :height="config.handleSize" 
+                    :width="config.handleSize" 
+                    @mousedown.prevent="startResize('bottom-right')"
+                    @touchstart.prevent="startResize('bottom-right')"
+                    style="cursor: nwse-resize"
+                />
+            </g>
+
+            <!-- BUTTONS -->
+            <g v-if="!readonly && activeEntity && activeEntity.x !== undefined">        
+                <circle 
+                    :cx="entity.x + entity.w - 0.5"
+                    :cy="entity.y - 1"
+                    :r="0.5"
+                    :fill="'#CCCCCC66'"
+                    @click="deleteEntity"
+                    style="cursor: pointer"
+                />
+                <line
+                    :x1="entity.x + entity.w - 0.75"
+                    :x2="entity.x + entity.w - 0.25"
+                    :y1="entity.y - 0.75"
+                    :y2="entity.y - 1.25"
+                    :stroke="'white'"
+                    :stroke-width="0.09"
+                    stroke-linecap="round"
+                    style="pointer-events: none;"
+                />
+                <line
+                    :x2="entity.x + entity.w - 0.75"
+                    :x1="entity.x + entity.w - 0.25"
+                    :y1="entity.y - 0.75"
+                    :y2="entity.y - 1.25"
+                    :stroke="'white'"
+                    :stroke-width="0.09"
+                    stroke-linecap="round"
+                    style="pointer-events: none;"
+                />
+            </g>
+
+            <!-- TOOLTIPS -->
+            <text
+                v-if="hoveredRect && !isDown"
+                :text-anchor="highlightedTooltipPosition.textAnchor"
+                :x="highlightedTooltipPosition.x"
+                :y="highlightedTooltipPosition.y"
+                :font-size="0.6"
+                :fill="config.gridHighlightColor"
+                style="user-select: none;"
+            >
+                {{ highlightedCoordinates }}
+            </text>
+
+            <text 
+                v-if="activeEntity && activeEntity.x !== undefined"
+                :x="entity.x + entity.w - entity.w / 2"
+                :y="entity.y + entity.h + 0.8"
+                :font-size="0.6"
+                :fill="config.tooltipColor"
+                :stroke="'black'"
+                :stroke-width="0.011"
+                style="pointer-events: none; user-select: none;"
+                text-anchor="middle"
+            >
+                {{ activeEntityCoordinates }}
+            </text>
+            <text 
+                v-if="activeEntity && activeEntity.x !== undefined"
+                :x="entity.x + entity.w - entity.w / 2"
+                :y="entity.y + entity.h + 1.3"
+                :font-size="0.4"
+                :fill="config.tooltipColor"
+                style="pointer-events: none; user-select: none;"
+                :stroke="'black'"
+                :stroke-width="0.011"
+                text-anchor="middle"
+            >
+                {{ activeEntity.description }}
+            </text>
+        </svg>
+    </div>
 </template>
