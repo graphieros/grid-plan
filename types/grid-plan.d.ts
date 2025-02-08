@@ -35,6 +35,7 @@ declare module "grid-plan" {
             icon?: string
             typeId: number | string
             id?: string | number
+            iconColor?: string;
         }
     
     export type GridPlanConfig = {
