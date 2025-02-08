@@ -348,7 +348,7 @@ function isValidIcon(icon) {
             maxWidth: '100%',
             height: '100%',
             position: 'relative',
-            overflow: 'hidden',
+            overflowX: 'hidden',
             resize: 'horizontal'
         }"
         class="grid-plan-grid"

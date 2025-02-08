@@ -256,6 +256,11 @@ watch(() => props.activeEntity, () => {
     addFloor();
 }, { deep: true });
 
+watch(() => props.config, () => {
+    renderItems();
+    renderFloor();
+})
+
 </script>
 
 <template>

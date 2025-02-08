@@ -1,5 +1,5 @@
 <script setup >
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, toRefs, watch } from "vue"
 import Grid from "./Grid.vue";
 import Grid3d from "./Grid3d.vue";
 import { createUid, useNestedProp } from "../lib";
@@ -62,14 +62,24 @@ const emit = defineEmits([
   'selectType'
 ])
 
-const items = ref(props.placedItems.map(item => {
-  const details = props.availableTypes && props.availableTypes.length ? props.availableTypes.find(t => t.typeId === item.typeId) : {}
-  return {
-    ...item,
-    id: item.id ?? createUid(),
-    ...details
-  }
-}))
+const items = ref([]);
+
+const { placedItems, availableTypes, config } = toRefs(props)
+
+function prepareItems() {
+  items.value = props.placedItems.map(item => {
+    const details = props.availableTypes && props.availableTypes.length ? props.availableTypes.find(t => t.typeId === item.typeId) : {}
+    return {
+      ...item,
+      id: item.id ?? createUid(),
+      ...details
+    }
+  });
+}
+
+onMounted(prepareItems);
+
+watch([ placedItems, availableTypes, config ], prepareItems, { deep: true });
 
 const finalConfig = computed(() => {
   return useNestedProp({
@@ -104,8 +114,6 @@ function triggerAction(rect) {
   emit('created', items.value.at(-1));
   selectItem(items.value.at(-1))
 }
-
-const availableTypes = ref(props.availableTypes)
 
 const activeType = ref(availableTypes.value[0])
 
