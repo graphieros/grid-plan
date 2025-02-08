@@ -1,11 +1,10 @@
 <p align="center">
-    <a href="https://grid-plan.graphieros.com/"><img src="https://vue-data-ui.graphieros.com/grid-plan.png"></a>
+    <a href="https://grid-plan.graphieros.com/"><img width="500" src="https://github.com/user-attachments/assets/fcfe7151-419e-4a3f-98f6-92491d917db0"></a>
     <br>
-    <a href="https://grid-plan.graphieros.com/"><img src="https://vue-data-ui.graphieros.com/grid-plan2.png"></a>
-    <br>
-    <br>
+    <a href="https://grid-plan.graphieros.com/"><img width="500" src="https://github.com/user-attachments/assets/acf2ec8f-a520-445d-a8eb-3ae5f09ffd8a"></a>
     <br>
 </p>
+
 
 # grid-plan
 
