@@ -258,7 +258,7 @@ watch(() => props.activeEntity, () => {
 
 watch(() => props.config, () => {
     renderItems();
-    renderFloor();
+    addFloor();
 })
 
 </script>
