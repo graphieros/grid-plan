@@ -100,7 +100,13 @@ const config = ref({
   tooltipColor: "#FFFFFF",
   useGradient: true,
   useShadow: true,
+  showGrid3d: true,
+  grid3dPosition: 'top'
 })
+
+function toggle3d() {
+  config.value.showGrid3d = !config.value.showGrid3d;
+}
 
 const plan = ref(null)
 
@@ -109,29 +115,30 @@ function getItems() {
 }
 
 function change(item) {
-  console.log('CHANGE', item)
+  // console.log('CHANGE', item)
 }
 
 function deleteItem(item) {
-  console.log('DELETE', item)
+  // console.log('DELETE', item)
 }
 
 function selectItem(item) {
-  console.log('SELECT', item)
+  // console.log('SELECT', item)
 }
 
 function unselect() {
-  console.log('UNSELECTED')
+  // console.log('UNSELECTED')
 }
 
 function createdItem(item) {
-  console.log('CREATED',item)
+  // console.log('CREATED',item)
 }
 
 </script>
 
 <template>
   <button @click="getItems">GET ITEMS</button>
+  <button @click="toggle3d">TOGGLE 3D</button>
   <main>
     <!-- <GridPlan ref="plan">
       <template #componentIcon="{ placedItem, maxSize }">
@@ -182,7 +189,7 @@ function createdItem(item) {
       @delete="deleteItem"
       @select="selectItem"
       @created="createdItem"
-      @unselect="unselectItem"
+      @unselect="unselect"
     >
       <template #inventory="{ item, deleteItem, focusItem, isFocused }">
         <div :style="`display: flex; flex-direction:row; flex-wrap: wrap; border: 1px solid ${item.color};width: fit-content; padding: 6px 12px; gap:6px; ${isFocused ? 'background: #FFFFFF20' : ''}`">
@@ -213,6 +220,7 @@ function createdItem(item) {
   <path d="M5 6m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" />
     </svg>
       </template>
+
     </LocalGridPlan>
   </main>
 </template>

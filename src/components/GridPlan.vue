@@ -1,6 +1,7 @@
 <script setup >
 import { ref, computed, onMounted } from "vue"
 import Grid from "./Grid.vue";
+import Grid3d from "./Grid3d.vue";
 import { createUid, useNestedProp } from "../lib";
 import defaultConfig from "../default_config.json"
 
@@ -149,6 +150,16 @@ defineExpose({
 
 <template>
   <main>
+    <Grid3d
+      v-if="finalConfig.grid3dPosition === 'top' && finalConfig.showGrid3d"
+      :items="items" 
+      :active-entity="entity"
+      :config="finalConfig"
+      :readonly="readonly"
+      @selectItem="selectItem"
+      @unselect="unselect"
+    />
+
     <details v-if="finalConfig.useAccordionMenu" class="grid-plan-menu">
       <summary class="grid-plan-menu__summary">
         {{ finalConfig.accordionMenuTitle }}
@@ -197,5 +208,15 @@ defineExpose({
       <slot name="componentText" v-bind="{ placedItem }"/>
     </template>
   </Grid>
+
+  <Grid3d
+    v-if="finalConfig.grid3dPosition === 'bottom' && finalConfig.showGrid3d"
+    :items="items" 
+    :active-entity="entity"
+    :config="finalConfig"
+    :readonly="readonly"
+    @selectItem="selectItem"
+    @unselect="unselect"
+  />
   </main>
 </template>

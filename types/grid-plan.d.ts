@@ -44,6 +44,7 @@ declare module "grid-plan" {
         coordinatesColor?: string
         crosshairBackground?: string
         fontFamily?: string
+        grid3dPosition?: "top" | "bottom"
         gridFill?: string
         gridHeight?: number
         gridHighlightColor?: string
@@ -57,6 +58,7 @@ declare module "grid-plan" {
         nonSelectedOpacity?: number
         ordinatesType?: "alphabetic" | "numeric"
         showCrosshair?: boolean
+        showGrid3d?: boolean
         showInventory?: boolean
         tooltipColor?: string
         useAccorionMenu?: boolean

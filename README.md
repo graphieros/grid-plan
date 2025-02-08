@@ -240,6 +240,7 @@ function unselected() {
 | coordinatesColor      | string                    | "#8A8A8A"    | Text color of the coordinates cells                                 |
 | crosshairBackground   | string                    | "#4A4A4A"    | Background color of the crosshair                                   |
 | fontFamily            | string                    | "Arial"      | Font used for all elements in the component                         |
+| grid3dPosition        | "top" OR "bottom"         | "top"        | Display 3d blueprint on top or below                                |
 | gridFill              | string                    | "#3A3A3A"    | Background color of unused blueprint cells                          |
 | gridHeight            | number                    | 20           | The height of the blueprint in cell units                           |
 | gridHighlightColor    | string                    | "#FFFFFF"    | The contour of available cells on hover                             |
@@ -252,6 +253,7 @@ function unselected() {
 | nonSelectedOpacity    | number                    | 0.3          | The opacity of non selected components when a component is selected |
 | ordinatesType         | "alphabetic" OR "numeric" | "numeric"    | Display ordinate coordinates as letters or numbers                  |
 | showCrosshair         | boolean                   | true         | Show crosshair when hovering available cells                        |
+| showGrid3d            | boolean                   | true         | Show the 3d blueprint                                               |
 | showInventory         | boolean                   | true         | Show inventory of placed components inside a details HTML element   |
 | tooltipColor          | string                    | "#FFFFFF"    | The tooltip text color                                              |
 | useAccordionMenu      | boolean                   | true         | Display the menu inside a details HTML element                      |

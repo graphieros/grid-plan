@@ -50,3 +50,64 @@ describe('scaleSVGPath', () => {
         expect(LIB.scaleSVGPath(scaled4.d, 24, {x: 5, y: 4})).toStrictEqual("M5.556916666666667 4.605833333333333a0.08333333333333333 0.08333333333333333 0 1 0 -0.009 0.12904166666666667")
     })
 })
+
+describe("convertColorToHex", () => {
+    test("returns HEX color format from RGB", () => {
+        expect(LIB.convertColorToHex("rgb(255,0,0)")).toBe("#ff0000ff");
+        expect(LIB.convertColorToHex("rgb(0,255,0)")).toBe("#00ff00ff");
+        expect(LIB.convertColorToHex("rgb(0,0,255)")).toBe("#0000ffff");
+        expect(LIB.convertColorToHex("rgb(0,0,0)")).toBe("#000000ff");
+        expect(LIB.convertColorToHex("rgb(255,255,255)")).toBe("#ffffffff");
+    });
+
+    test("returns HEX color format from HSL", () => {
+        expect(LIB.convertColorToHex("hsl(0,100%,50%)")).toBe("#ff0000ff");
+        expect(LIB.convertColorToHex("hsl(120,100%,50%)")).toBe("#00ff00ff");
+        expect(LIB.convertColorToHex("hsl(240,100%,50%)")).toBe("#0000ffff");
+        expect(LIB.convertColorToHex("hsl(0,0%,0%)")).toBe("#000000ff");
+        expect(LIB.convertColorToHex("hsl(0,0%,100%)")).toBe("#ffffffff");
+    });
+
+    test("returns HEX color from an HSL passed through hslToRgba", () => {
+        const rgb = LIB.hslToRgba(50, 50, 50);
+        expect(LIB.convertColorToHex(`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`)).toBe(
+            "#bfaa40ff"
+        );
+    });
+
+    test("returns HEX color from a name color", () => {
+        expect(LIB.convertColorToHex("red")).toBe("#FF0000ff");
+        expect(LIB.convertColorToHex("RED")).toBe("#FF0000ff");
+        expect(LIB.convertColorToHex("Red")).toBe("#FF0000ff");
+    });
+
+    test("should convert rgba to hex with alpha channel", () => {
+        const result = LIB.convertColorToHex("rgba(255,0,0,0.5)");
+        expect(result).toBe("#ff000080");
+    });
+
+    test("should convert hsla to hex with alpha channel", () => {
+        const result = LIB.convertColorToHex("hsla(0, 100%, 50%, 0.5)");
+        expect(result).toBe("#ff000080");
+    });
+});
+
+describe("hslToRgba", () => {
+    test("converts hsl to RGBA", () => {
+        expect(LIB.hslToRgba(50, 50, 50)).toStrictEqual([191, 170, 64, 1]);
+    });
+    test("converts hsla to RGBA", () => {
+        expect(LIB.hslToRgba(50, 50, 50, 0.5)).toStrictEqual([191, 170, 64, 0.5]);
+    });
+});
+
+describe("convertNameColorToHex", () => {
+    test("returns a hex color from a standard html color name", () => {
+        expect(LIB.convertNameColorToHex("red")).toBe("#FF0000");
+        expect(LIB.convertNameColorToHex("Red")).toBe("#FF0000");
+        expect(LIB.convertNameColorToHex("RED")).toBe("#FF0000");
+        expect(LIB.convertNameColorToHex("sandybrown")).toBe("#F4A460");
+        expect(LIB.convertNameColorToHex("SandyBrown")).toBe("#F4A460");
+        expect(LIB.convertNameColorToHex("SANDYBROWN")).toBe("#F4A460");
+    });
+});
