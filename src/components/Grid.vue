@@ -71,8 +71,8 @@ onMounted(() => {
 
 onUnmounted(() => document.removeEventListener('keydown', unselectOnKeypress));
 
-const width = computed(() => props.config.gridWidth);
-const height = computed(() => props.config.gridHeight);
+const width = ref(props.config.gridWidth);
+const height = ref(props.config.gridHeight);
 const SVG = ref(null);
 
 const gridRects = computed(() => {
@@ -154,7 +154,25 @@ function findFirstAvailableSquare(gridWidth, gridHeight, occupiedSquares) {
     return null; // No available square found
 }
 
-const walls = computed(() => convertElementsToIndividualWalls(props.items.filter(el => el.id !== props.activeEntity.id)))
+const walls = ref(convertElementsToIndividualWalls(props.items.filter(el => el.id !== props.activeEntity.id)))
+
+function computeEntityCoordinates() {
+    if(!props.activeEntity.x || !props.activeEntity.y) {
+        const firstAvailableSquare = findFirstAvailableSquare(width.value, height.value, walls.value);
+
+        if (!firstAvailableSquare) {
+            console.error('There is no available space.');
+        }
+
+        return {
+            ...firstAvailableSquare,
+            h: 1,
+            w: 1
+        }
+    } else {
+        return props.activeEntity;
+    }
+}
 
 const entity = ref(props.activeEntity || {})
 

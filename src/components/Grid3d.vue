@@ -256,13 +256,6 @@ watch(() => props.activeEntity, () => {
     addFloor();
 }, { deep: true });
 
-watch(() => props.config, () => {
-    width.value = ref(props.config.gridWidth);
-    height.value = ref(props.config.gridHeight);
-    renderItems();
-    addFloor();
-})
-
 </script>
 
 <template>

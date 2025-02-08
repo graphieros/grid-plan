@@ -79,7 +79,10 @@ function prepareItems() {
 
 onMounted(prepareItems);
 
-watch([ placedItems, availableTypes, config ], prepareItems, { deep: true });
+watch([ placedItems, availableTypes, config ], () => {
+  prepareItems();
+  step.value += 1;
+}, { deep: true });
 
 const finalConfig = computed(() => {
   return useNestedProp({
@@ -220,6 +223,7 @@ defineExpose({
   <Grid3d
     v-if="finalConfig.grid3dPosition === 'bottom' && finalConfig.showGrid3d"
     :items="items" 
+    :key="step"
     :active-entity="entity"
     :config="finalConfig"
     :readonly="readonly"
