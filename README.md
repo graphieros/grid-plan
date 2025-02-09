@@ -3,8 +3,8 @@
     <br>
     <a href="https://grid-plan.graphieros.com/"><img width="500" src="https://github.com/user-attachments/assets/acf2ec8f-a520-445d-a8eb-3ae5f09ffd8a"></a>
     <br>
+    <a href="https://grid-plan.graphieros.com/"><img width="200" src="https://github.com/user-attachments/assets/75eb428f-984d-4b5b-ad13-bbeba7fcab04"></a>
 </p>
-
 
 # grid-plan
 
