@@ -89,6 +89,15 @@ const init3DScene = () => {
     animate();
 };
 
+const disposeScene = () => {
+    if (renderer) {
+        renderer.dispose();
+    }
+    if (scene) {
+        scene.clear();
+    }
+};
+
 const addFloor = () => {
     const floorGeometry = new THREE.PlaneGeometry(width.value, height.value);
     const floorMaterial = new THREE.MeshStandardMaterial({
@@ -255,14 +264,17 @@ watch(() => props.activeEntity, () => {
     renderItems();
     addFloor();
 }, { deep: true });
-watch(() => props.config, () => {
-    width.value = props.config.gridWidth;
-    height.value = props.config.gridHeight;
-    init3DScene();
-    renderItems();
-    addFloor();
-}, { deep: true });
 
+watch(() => props.config, (newVal) => {
+    if(newVal) {
+        width.value = props.config.gridWidth;
+        height.value = props.config.gridHeight;
+        disposeScene();
+        init3DScene();
+        renderItems();
+        addFloor();
+    }
+}, { deep: true });
 </script>
 
 <template>

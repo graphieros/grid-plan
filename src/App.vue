@@ -104,6 +104,10 @@ const config = ref({
   grid3dPosition: 'top'
 })
 
+// setTimeout(() => {
+//   config.value.gridHeight = 40;
+// }, 2000)
+
 function toggle3d() {
   config.value.showGrid3d = !config.value.showGrid3d;
 }
