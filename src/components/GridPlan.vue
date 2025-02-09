@@ -95,8 +95,7 @@ function recordChange(entity) {
   emit('change', entity)
 }
 
-const entity = ref({
-})
+const entity = ref({})
 
 const step = ref(0);
 

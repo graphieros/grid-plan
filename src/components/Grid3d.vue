@@ -39,7 +39,7 @@ const init3DScene = () => {
     scene.background = new THREE.Color(convertColorToHex(props.config.coordinatesBackground).slice(0, -2));
 
     camera = new THREE.PerspectiveCamera(75, container.value.clientWidth / container.value.clientHeight, 0.1, 1000);
-    camera.position.set(10, 15, 20);
+    camera.position.set(0, height.value, 12);
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ canvas: canvas.value, antialias: true });
@@ -252,6 +252,13 @@ watch(() => props.items, () => {
     addFloor();
 }, { deep: true });
 watch(() => props.activeEntity, () => {
+    renderItems();
+    addFloor();
+}, { deep: true });
+watch(() => props.config, () => {
+    width.value = props.config.gridWidth;
+    height.value = props.config.gridHeight;
+    init3DScene();
     renderItems();
     addFloor();
 }, { deep: true });
