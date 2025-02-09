@@ -138,41 +138,7 @@ const gridCoordinates = computed(() => {
     };
 });
 
-function findFirstAvailableSquare(gridWidth, gridHeight, occupiedSquares) {
-    const occupiedSet = new Set(
-        occupiedSquares.map(square => `${square.x},${square.y}`)
-    );
-
-    for (let y = 0; y < gridHeight; y += 1) {
-        for (let x = 0; x < gridWidth; x += 1) {
-            if (!occupiedSet.has(`${x},${y}`)) {
-                return { x, y };
-            }
-        }
-    }
-
-    return null; // No available square found
-}
-
-const walls = ref(convertElementsToIndividualWalls(props.items.filter(el => el.id !== props.activeEntity.id)))
-
-function computeEntityCoordinates() {
-    if(!props.activeEntity.x || !props.activeEntity.y) {
-        const firstAvailableSquare = findFirstAvailableSquare(width.value, height.value, walls.value);
-
-        if (!firstAvailableSquare) {
-            console.error('There is no available space.');
-        }
-
-        return {
-            ...firstAvailableSquare,
-            h: 1,
-            w: 1
-        }
-    } else {
-        return props.activeEntity;
-    }
-}
+const walls = ref(convertElementsToIndividualWalls(props.items.filter(el => el.id !== props.activeEntity.id)));
 
 const entity = ref(props.activeEntity || {})
 

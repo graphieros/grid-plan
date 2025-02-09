@@ -277,6 +277,12 @@ To customize the styling of the menu and inventory, target the following css cla
 }
 .grid-plan-inventory__body {
 }
+.grid-plan-grid {
+}
+.grid-plan-grid-3d {
+}
+.grid-plan-grid-3d-label {
+}
 ```
 
 ## Icons

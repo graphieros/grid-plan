@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer';
 import { convertColorToHex } from '../lib';
 
 const emit = defineEmits(['hoverSquare', 'hoverItem', 'selectItem', 'unselect']);
@@ -30,9 +31,52 @@ const height = ref(props.config.gridHeight);
 
 const container = ref(null);
 const canvas = ref(null);
-let scene, camera, renderer, controls, raycaster, mouse;
+let scene, camera, renderer, css2dRenderer, controls, raycaster, mouse;
 let hoveredObject = null;
 let gridHelper = null;
+
+function numberToLetters(num) {
+    let letters = '';
+    while (num > 0) {
+        let remainder = (num - 1) % 26;
+        letters = String.fromCharCode(65 + remainder) + letters;
+        num = Math.floor((num - 1) / 26);
+    }
+    return letters;
+}
+
+const gridCoordinates = computed(() => {
+    const abs = [];
+    const ord = [];
+
+    for (let i = 1; i <= props.config.gridWidth; i += 1) {
+        if (props.config.abscissaType === 'alphabetic') {
+            abs.push(numberToLetters(i));
+        } else {
+            abs.push(i);
+        }
+    }
+    for (let i = 1; i <= props.config.gridHeight; i += 1) {
+        if (props.config.ordinatesType === 'alphabetic') {
+            ord.push(numberToLetters(i));  
+        } else {
+            ord.push(i);
+        }
+    }
+
+    return {
+        abs,
+        ord
+    };
+});
+
+const activeEntityCoordinates = computed(() => {
+    if (!props.activeEntity) return null;
+    if (props.activeEntity.h === 1 && props.activeEntity.w === 1) {
+        return `${gridCoordinates.value.abs[props.activeEntity.x]}-${gridCoordinates.value.ord[props.activeEntity.y]}`;
+    }
+    return `${gridCoordinates.value.abs[props.activeEntity.x]}-${gridCoordinates.value.ord[props.activeEntity.y]}, ${gridCoordinates.value.abs[props.activeEntity.x + props.activeEntity.w - 1]}-${gridCoordinates.value.ord[props.activeEntity.y + props.activeEntity.h - 1]}`
+})
 
 const init3DScene = () => {
     scene = new THREE.Scene();
@@ -42,6 +86,7 @@ const init3DScene = () => {
     camera.position.set(0, height.value, 12);
     camera.lookAt(0, 0, 0);
 
+    // WebGL Renderer
     renderer = new THREE.WebGLRenderer({ canvas: canvas.value, antialias: true });
     renderer.setSize(container.value.clientWidth, container.value.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -84,6 +129,14 @@ const init3DScene = () => {
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
 
+    // Initialize CSS2DRenderer
+    css2dRenderer = new CSS2DRenderer();
+    css2dRenderer.setSize(container.value.clientWidth, container.value.clientHeight);
+    css2dRenderer.domElement.style.position = 'absolute';
+    css2dRenderer.domElement.style.top = '0px';
+    css2dRenderer.domElement.style.pointerEvents = 'none';
+    container.value.appendChild(css2dRenderer.domElement);
+
     renderItems();
     addFloor();
     animate();
@@ -92,6 +145,9 @@ const init3DScene = () => {
 const disposeScene = () => {
     if (renderer) {
         renderer.dispose();
+    }
+    if (css2dRenderer) {
+        container.value.removeChild(css2dRenderer.domElement);
     }
     if (scene) {
         scene.clear();
@@ -136,6 +192,19 @@ const renderItems = () => {
             if (props.activeEntity && item === props.activeEntity) {
                 material.emissive = new THREE.Color(convertColorToHex(props.config.gridHighlightColor).slice(0, -2));
                 material.emissiveIntensity = 0.5;
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'grid-plan-grid-3d-label';
+                labelDiv.innerHTML = `<div style="display: flex; flex-direction:column; align-items:center"><span>${props.activeEntity.description}</span><span>${activeEntityCoordinates.value}</span></div>`;
+                labelDiv.style.marginTop = '-2em';
+                labelDiv.style.color = props.config.tooltipColor;
+                const label = new CSS2DObject(labelDiv);
+                label.position.set(
+                    (item.x + item.w / 2 - (width.value / 2)),
+                    1,
+                    (item.y + item.h / 2 - height.value / 2)
+                );
+                scene.add(label);
             }
 
             const cube = new THREE.Mesh(geometry, material);
@@ -157,7 +226,9 @@ const animate = () => {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
+    css2dRenderer.render(scene, camera);  // Render the CSS2DRenderer as well
 };
+
 const onMouseMove = (event) => {
     const rect = canvas.value.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -195,8 +266,10 @@ const onResize = () => {
         renderer.setSize(newWidth, newHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.render(scene, camera);
+        css2dRenderer.setSize(newWidth, newHeight);
     }
 };
+
 const selectedItem = ref(null);
 
 const onClick = (event) => {
@@ -240,6 +313,9 @@ onBeforeUnmount(() => {
     if (renderer) {
         renderer.dispose();
         renderer.forceContextLoss();
+    }
+    if (css2dRenderer) {
+        container.value.removeChild(css2dRenderer.domElement);
     }
     if (controls) controls.dispose();
     if (scene) {
