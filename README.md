@@ -105,6 +105,7 @@ const config = ref({
   coordinatesColor: "#8A8A8A",
   crosshairBackground: "#4A4A4A",
   fontFamily: "Arial",
+  grid3dPosition: "top",
   gridFill: "#3A3A3A",
   gridHeight: 42,
   gridHighlightColor: "#00FF00",
@@ -117,6 +118,7 @@ const config = ref({
   nonSelectedOpacity: 0.3
   ordinatesType: "numeric",
   showCrosshair: true,
+  showGrid3d: true,
   tooltipColor: "#FFFFFF",
   useAccordionMenu: true,
   useGradient: true,
@@ -174,6 +176,19 @@ function unselected() {
     @unselect="unselected"
     @selectType="selectType"
   >
+    <!-- A slot to do whatever you need before the component -->
+    <template
+      #before="{ items, deleteItem, focusItem, getFocusState, activeEntity }"
+    >
+      <div>ACTIVE ENTITY: {{ activeEntity }}</div>
+      <div v-for="item in items">
+        {{ item.description }}
+        <button @click="deleteItem(item)">DELETE</button>
+        <button @click="focusItem(item)">DELETE</button>
+        FOCUS STATE: {{ getFocusState(item) }}
+      </div>
+    </template>
+
     <!-- Create your available types menu -->
     <template #availableType="{ availableType }">
       <!-- The click event is managed by the component, that will select the type to be used when adding a component to the blueprint -->
@@ -225,6 +240,19 @@ function unselected() {
 
     <!-- Or use this slot to display a single letter or an icon font -->
     <template #componentText="{ placedItem }"> {{ placedItem.icon }} </template>
+
+    <!-- A slot to do whatever you need after the component -->
+    <template
+      #after="{ items, deleteItem, focusItem, getFocusState, activeEntity }"
+    >
+      <div>ACTIVE ENTITY: {{ activeEntity }}</div>
+      <div v-for="item in items">
+        {{ item.description }}
+        <button @click="deleteItem(item)">DELETE</button>
+        <button @click="focusItem(item)">DELETE</button>
+        FOCUS STATE: {{ getFocusState(item) }}
+      </div>
+    </template>
   </GridPlan>
 </template>
 ```
@@ -265,6 +293,8 @@ Grid Plan does not ship css.
 To customize the styling of the menu and inventory, target the following css classes:
 
 ```css
+.grid-plan-main {
+}
 .grid-plan-menu {
 }
 .grid-plan-menu__summary {

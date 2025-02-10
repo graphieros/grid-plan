@@ -195,6 +195,19 @@ function createdItem(item) {
       @created="createdItem"
       @unselect="unselect"
     >
+      <template #before="{ items, deleteItem, focusItem, getFocusState, activeEntity }">
+        #BEFORE SLOT
+        <div>
+          ACTIVE ENTITY: {{ activeEntity }}
+        </div>
+        <div v-for="item in items">
+          {{ item.description }}
+          <button @click="deleteItem(item)">DELETE</button>
+          <button @click="focusItem(item)">DELETE</button>
+          FOCUS STATE: {{ getFocusState(item) }}
+        </div>
+      </template>
+
       <template #inventory="{ item, deleteItem, focusItem, isFocused }">
         <div :style="`display: flex; flex-direction:row; flex-wrap: wrap; border: 1px solid ${item.color};width: fit-content; padding: 6px 12px; gap:6px; ${isFocused ? 'background: #FFFFFF20' : ''}`">
           <span>{{ item.description }}</span>
@@ -225,6 +238,18 @@ function createdItem(item) {
     </svg>
       </template>
 
+      <template #after="{ items, deleteItem, focusItem, getFocusState, activeEntity }">
+        #AFTER SLOT
+        <div>
+          ACTIVE ENTITY: {{ activeEntity }}
+        </div>
+        <div v-for="item in items">
+          {{ item.description }}
+          <button @click="deleteItem(item)">DELETE</button>
+          <button @click="focusItem(item)">DELETE</button>
+          FOCUS STATE: {{ getFocusState(item) }}
+        </div>
+      </template>
     </LocalGridPlan>
   </main>
 </template>

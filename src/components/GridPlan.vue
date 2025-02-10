@@ -152,6 +152,10 @@ function focusItem(item) {
   }
 }
 
+function getFocusState(item) {
+  return item && item.id === entity.value.id
+}
+
 defineExpose({
   getItems
 })
@@ -159,7 +163,9 @@ defineExpose({
 </script>
 
 <template>
-  <main>
+  <main class="grid-plan-main" :style="{ position: 'relative' }">
+    <slot name="before" v-bind="{ items, deleteItem, focusItem, getFocusState, activeEntity: entity }"/>
+
     <Grid3d
       v-if="finalConfig.grid3dPosition === 'top' && finalConfig.showGrid3d"
       :items="items" 
@@ -229,5 +235,6 @@ defineExpose({
     @selectItem="selectItem"
     @unselect="unselect"
   />
+  <slot name="after" v-bind="{ items, deleteItem, focusItem, getFocusState }"/>
   </main>
 </template>

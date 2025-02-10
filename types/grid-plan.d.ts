@@ -67,3 +67,68 @@ declare module "grid-plan" {
         useShadow?: boolean
     }
 }
+
+/**
+ * Grid Plan utility
+ * ---
+ * Delete an entity
+ * ---
+ * 1. Usage in #inventory slot:
+ * 
+ * @example
+ * ```vue
+ * <template #inventory="{ item, deleteItem, focusItem, isFocused }">
+ *   <div :style="`display: flex; flex-direction: row; flex-wrap: wrap; 
+ *        border: 1px solid ${item.color}; width: fit-content; 
+ *        padding: 6px 12px; gap: 6px; 
+ *        ${isFocused ? 'background: #FFFFFF20' : ''}`">
+ *     <span>{{ item.description }}</span>
+ *     <span>x: {{ item.x }}</span>
+ *     <span>y: {{ item.y }}</span>
+ *     <span>h: {{ item.h }}</span>
+ *     <span>w: {{ item.w }}</span>
+ *     <button @ click="deleteItem">DELETE</button>
+ *     <button @ click="focusItem">{{ isFocused ? 'UNFOCUS' : 'FOCUS' }}</button>
+ *   </div>
+ * </template>
+ * ```
+ * 
+ * 2. Usage in #before and #after slots:
+ * 
+ * @example
+ * ```vue
+ * <template #before="{ items, deleteItem, focusItem, getFocusState, activeEntity }">
+ *      <div>
+ *          ACTIVE ENTITY: {{ activeEntity }}
+ *      </div>
+ *      <div v-for="item in items">
+ *          {{ item.description }}
+ *          <button @ click="deleteItem(item)">DELETE</button>
+ *          <button @ click="focusItem(item)">DELETE</button>
+ *          FOCUS STATE: {{ getFocusState(item) }}
+ *      </div>
+ * </template>
+ * ```
+ * 
+ * @param {Object} item - GridPlanItem
+ */
+export const deleteItem: (item: GridPlanItem) => void
+
+
+/**
+ * Grid Plan utility
+ * ---
+ * Toggle focus on an entity.
+ * ---
+ * @param {Object} item - GridPlanItem
+ */
+export const focusItem: (item: GridPlanItem) => void
+
+/**
+ * Grid Plan utility
+ * ---
+ * Returns the focus state of an entity: true if the entity is currently focused.
+ * ---
+ * @param {Object} item - GridPlanItem
+ */
+export const getFocusState: (item: GridPlanItem) => boolean
