@@ -250,6 +250,8 @@ const onMouseMove = (event) => {
 
         if (intersected.userData?.w) {
             emit('hoverItem', intersected.userData);
+            emit('selectItem', intersected.userData);
+            selectedItem.value = hoveredObject;
         } else {
             const gridPos = intersects[0].point;
             emit('hoverSquare', { x: Math.floor(gridPos.x + width.value / 2), y: Math.floor(gridPos.z + height.value / 2) });
@@ -284,7 +286,6 @@ const onClick = (event) => {
         const clickedObject = intersects[0].object;
         
         if (clickedObject.userData) {
-
             if (selectedItem.value && selectedItem.value.userData.id === clickedObject.userData.id) {
                 emit('unselect', clickedObject.userData); 
                 selectedItem.value = null; 
