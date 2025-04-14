@@ -56,7 +56,7 @@ Or you can import it directly in your Vue file:
 | -------------- | ------------------ | ----------------------------------- | ----------------------------------------------------------- |
 | availableTypes | GridPlanItemType[] | YES                                 | The types of components that can be placed on the blueprint |
 | placedItems    | GridPlanItem[]     | YES (can be empty)                  | Components already placed on the blueprint                  |
-| radonly        | boolean            | NO (default: false)                 | Blueprint will be readonly if true                          |
+| readonly       | boolean            | NO (default: false)                 | Blueprint will be readonly if true                          |
 | config         | GridPlanConfig     | NO (default config will be applied) | Configuration object to customize looks                     |
 
 ## Example
@@ -115,7 +115,7 @@ const config = ref({
   handleFill: "#FFFFFF",
   handleSize: 0.3,
   iconColor: "#1A1A1A",
-  nonSelectedOpacity: 0.3
+  nonSelectedOpacity: 0.3,
   ordinatesType: "numeric",
   showCrosshair: true,
   showGrid3d: true,
@@ -154,7 +154,7 @@ function createdItem(item) {
 
 function unselected() {
   // Triggered when an item is unselected
-  // Pressing ESC will treigger unselect
+  // Pressing ESC will trigger unselect
   // Selecting an already selected item will trigger unselect
   console.log("BLUEPRINT IS NOW UNSELECTED");
 }
@@ -165,10 +165,10 @@ function unselected() {
 ```html
 <template>
   <GridPlan
-    :availableTypes="availableTypes"
     ref="plan"
-    :config="config"
-    :placedItems="placedItems"
+    :availableTypes
+    :config
+    :placedItems
     @change="change"
     @delete="deleteItem"
     @select="selectItem"
