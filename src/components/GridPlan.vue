@@ -157,7 +157,8 @@ function getFocusState(item) {
 }
 
 defineExpose({
-  getItems
+  getItems,
+  unselect
 })
 
 </script>

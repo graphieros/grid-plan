@@ -202,8 +202,8 @@ function createdItem(item) {
         </div>
         <div v-for="item in items">
           {{ item.description }}
-          <button @click="deleteItem(item)">DELETE</button>
-          <button @click="focusItem(item)">DELETE</button>
+          <button @click="deleteItem(item)">❌ DELETE</button>
+          <button @click="focusItem(item)">👁️ FOCUS</button>
           FOCUS STATE: {{ getFocusState(item) }}
         </div>
       </template>
