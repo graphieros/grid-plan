@@ -2,39 +2,24 @@ import { defineConfig } from "vite";
 import { resolve } from "path";
 import vue from "@vitejs/plugin-vue";
 
-
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-  ],
+  plugins: [vue()],
   build: {
     lib: {
-      // src/indext.ts is where we have exported the component(s)
       entry: resolve(__dirname, "src/index.js"),
-      name: "VueDataUi",
-      // the name of the output files when the build is run
-      fileName: "grid-plan",
-      formats: ['es']
+      name: "GridPlan",
+      formats: ["es"],
+      fileName: () => "grid-plan.js",
     },
     rollupOptions: {
-      // make sure to externalize deps that shouldn't be bundled
-      // into your library
-      external: ["vue", "grid-plan"],
-      output: {
-        // Provide global variables to use in the UMD build
-        // for externalized deps
-        globals: {
-          vue: "Vue",
-        },
-      },
+      external: [
+        "vue",
+        /^three(\/.+)?$/,
+      ],
+      output: {},
     },
-    types: [
-      {
-        declarationDir: "dist/types",
-        root: resolve(__dirname, "types"),
-        entry: "grid-plan.d.ts",
-      },
-    ],
+    sourcemap: true,
+    emptyOutDir: true,
+    minify: "esbuild",
   },
 });

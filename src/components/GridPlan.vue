@@ -218,11 +218,11 @@ defineExpose({
     >
 
     <template #componentIcon="{ placedItem, maxSize, availableTypes }">
-        <slot name="componentIcon" v-bind="{ placedItem, maxSize }"/>
+        <slot name="componentIcon" v-bind="{ placedItem, maxSize, availableTypes }"/>
     </template>
 
     <template #componentText="{ placedItem, availableTypes }">
-      <slot name="componentText" v-bind="{ placedItem }"/>
+      <slot name="componentText" v-bind="{ placedItem, availableTypes }"/>
     </template>
   </Grid>
 
@@ -236,6 +236,6 @@ defineExpose({
     @selectItem="selectItem"
     @unselect="unselect"
   />
-  <slot name="after" v-bind="{ items, deleteItem, focusItem, getFocusState }"/>
+  <slot name="after" v-bind="{ items, deleteItem, focusItem, getFocusState, activeEntity: entity }"/>
   </main>
 </template>

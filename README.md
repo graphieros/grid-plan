@@ -28,6 +28,16 @@ grid-plan ships with:
 npm i grid-plan
 ```
 
+Grid Plan requires Three.js as peer dependency.
+
+```bash
+npm install grid-plan three
+# or
+yarn add grid-plan three
+# or
+pnpm add grid-plan three
+```
+
 You can declare the component globally in your main.js:
 
 ```js
@@ -74,6 +84,7 @@ const availableTypes = ref([
     description: "server",
     icon: "server",
     iconColor: "#FFFFFF",
+    depth: 2, // optional item height (defaults to 1 (grid cell size) if not provided)
   },
   {
     typeId: 2,
@@ -123,6 +134,10 @@ const config = ref({
   useAccordionMenu: true,
   useGradient: true,
   useShadow: true,
+  showBox: true,
+  boxThickness: 0.3,
+  boxHeight: 1,
+  boxColor: "#5A5A5A",
 });
 
 // Events
@@ -286,6 +301,10 @@ function unselected() {
 | useAccordionMenu      | boolean                   | true         | Display the menu inside a details HTML element                      |
 | useGradient           | boolean                   | true         | Shows components with a subtle gradient                             |
 | useShadow             | boolean                   | true         | Show selected item with a drop shadow                               |
+| showBox               | boolean                   | true         | Show a 'wall' around the grid                                       |
+| boxThickness          | number                    | 0.3          | Box thickness, defaults to 1/3 of a grid cell                       |
+| boxHeight             | number                    | 1            | Box height, defaults to the same size as a grid cell                |
+| boxColor              | string                    | "#5A5A5A"    | Box color                                                           |
 
 ## CSS classes
 

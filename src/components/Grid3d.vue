@@ -1,6 +1,26 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
-import * as THREE from "three";
+import {
+    Scene,
+    Color,
+    PerspectiveCamera,
+    WebGLRenderer,
+    PCFSoftShadowMap,
+    DirectionalLight,
+    AmbientLight,
+    PlaneGeometry,
+    MeshStandardMaterial,
+    Mesh,
+    DoubleSide,
+    Group,
+    Raycaster,
+    Vector2,
+    BufferGeometry,
+    Float32BufferAttribute,
+    LineBasicMaterial,
+    LineSegments,
+    BoxGeometry,
+} from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import {
     CSS2DRenderer,
@@ -90,13 +110,87 @@ const activeEntityCoordinates = computed(() => {
         }`;
 });
 
+function createRectGrid(w, h, color) {
+    const vertices = [];
+    for (let x = 0; x <= w; x += 1) {
+        const X = x - w / 2;
+        vertices.push(X, 0, -h / 2,  X, 0, h / 2);
+    }
+
+    for (let z = 0; z <= h; z += 1) {
+        const Z = z - h / 2;
+        vertices.push(-w / 2, 0, Z,  w / 2, 0, Z);
+    }
+
+    const geometry = new BufferGeometry();
+    geometry.setAttribute(
+        "position",
+        new Float32BufferAttribute(vertices, 3)
+    );
+
+    const material = new LineBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 1,
+    });
+
+    const lines = new LineSegments(geometry, material);
+    lines.position.y = 0;
+    return lines;
+}
+
+function createWalls(w, h) {
+    const thickness = props.config.boxThickness;
+    const wallHeight = props.config.boxHeight;
+    const color = props.config.boxColor;
+
+    const walls = new Group();
+    const material = new MeshStandardMaterial({
+        color,
+        metalness: 0.2,
+        roughness: 0.8,
+    });
+
+    const left = new Mesh(
+        new BoxGeometry(thickness, wallHeight, h + thickness * 2),
+        material
+    );
+    left.position.set(-w / 2 - thickness / 2, wallHeight / 2, 0);
+    left.userData = { isWall: true };
+
+    const right = new Mesh(
+        new BoxGeometry(thickness, wallHeight, h + thickness * 2),
+        material
+    );
+    right.position.set(w / 2 + thickness / 2, wallHeight / 2, 0);
+    right.userData = { isWall: true };
+
+    const front = new Mesh(
+        new BoxGeometry(w + thickness * 2, wallHeight, thickness),
+        material
+    );
+    front.position.set(0, wallHeight / 2, -h / 2 - thickness / 2);
+    front.userData = { isWall: true };
+
+    const back = new Mesh(
+        new BoxGeometry(w + thickness * 2, wallHeight, thickness),
+        material
+    );
+    back.position.set(0, wallHeight / 2, h / 2 + thickness / 2);
+    back.userData = { isWall: true };
+
+    walls.add(left, right, front, back);
+    return walls;
+}
+
+
 const init3DScene = () => {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(
+    scene = new Scene();
+    scene.background = new Color(
         convertColorToHex(props.config.coordinatesBackground).slice(0, -2)
     );
 
-    camera = new THREE.PerspectiveCamera(
+    camera = new PerspectiveCamera(
         75,
         container.value.clientWidth / container.value.clientHeight,
         0.1,
@@ -105,17 +199,17 @@ const init3DScene = () => {
     camera.position.set(0, height.value, 12);
     camera.lookAt(0, 0, 0);
 
-    renderer = new THREE.WebGLRenderer({ canvas: canvas.value, antialias: true });
+    renderer = new WebGLRenderer({ canvas: canvas.value, antialias: true });
     renderer.setSize(container.value.clientWidth, container.value.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = PCFSoftShadowMap;
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.1;
 
-    const light = new THREE.DirectionalLight(0xffffff, 1);
+    const light = new DirectionalLight(0xffffff, 1);
     light.position.set(5, 20, 7.5);
     light.castShadow = true;
     light.intensity = 4;
@@ -132,20 +226,19 @@ const init3DScene = () => {
 
     scene.add(light);
 
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    const ambientLight = new AmbientLight(0x404040);
     scene.add(ambientLight);
 
-    gridHelper = new THREE.GridHelper(
-        Math.max(height.value, width.value),
-        Math.max(height.value, width.value),
-        convertColorToHex(props.config.gridStroke).slice(0, -2),
+    gridHelper = gridHelper = createRectGrid(
+        width.value,
+        height.value,
         convertColorToHex(props.config.gridStroke).slice(0, -2)
     );
 
     scene.add(gridHelper);
 
-    raycaster = new THREE.Raycaster();
-    mouse = new THREE.Vector2();
+    raycaster = new Raycaster();
+    mouse = new Vector2();
 
     css2dRenderer = new CSS2DRenderer();
     css2dRenderer.setSize(
@@ -159,6 +252,7 @@ const init3DScene = () => {
 
     renderItems();
     addFloor();
+    addWalls();
     animate();
 };
 
@@ -168,21 +262,31 @@ const disposeScene = () => {
     if (scene) scene.clear();
 };
 
+function addWalls() {
+    if (props.config.showBox) {
+        const walls = createWalls(width.value, height.value, props.config.box);
+        scene.add(walls);
+    }
+}
+
 const addFloor = () => {
-    const floorGeometry = new THREE.PlaneGeometry(width.value, height.value);
-    const floorMaterial = new THREE.MeshStandardMaterial({
+    const floorGeometry = new PlaneGeometry(width.value, height.value);
+    const floorMaterial = new MeshStandardMaterial({
         color: convertColorToHex(props.config.gridFill).slice(0, -2),
-        side: THREE.DoubleSide,
+        side: DoubleSide,
         opacity: 0.5,
         transparent: true,
     });
 
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    const floor = new Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -0.01;
     floor.receiveShadow = true;
+
+    floor.userData = { isFloor: true };
     scene.add(floor);
 };
+
 
 const renderItems = () => {
     const SPACING = 0.1;
@@ -196,19 +300,19 @@ const renderItems = () => {
 
     [...props.items, props.activeEntity].forEach((item) => {
         if (item && item.w && item.h) {
-            const geometry = new THREE.BoxGeometry(
+            const geometry = new BoxGeometry(
                 item.w - SPACING,
-                1,
+                item.depth ?? 1,
                 item.h - SPACING
             );
-            const material = new THREE.MeshStandardMaterial({
+            const material = new MeshStandardMaterial({
                 color: item.color,
                 metalness: 0.7,
                 roughness: 0.4,
             });
 
             if (props.activeEntity && item === props.activeEntity) {
-                material.emissive = new THREE.Color(
+                material.emissive = new Color(
                     convertColorToHex(props.config.gridHighlightColor).slice(0, -2)
                 );
                 material.emissiveIntensity = 0.5;
@@ -221,16 +325,16 @@ const renderItems = () => {
                 const label = new CSS2DObject(labelDiv);
                 label.position.set(
                     item.x + item.w / 2 - width.value / 2,
-                    1,
+                    item.depth ?? 1,
                     item.y + item.h / 2 - height.value / 2
                 );
                 scene.add(label);
             }
 
-            const cube = new THREE.Mesh(geometry, material);
+            const cube = new Mesh(geometry, material);
             cube.position.set(
                 item.x + item.w / 2 - width.value / 2,
-                0.5,
+                (item.depth ?? 1) / 2,
                 item.y + item.h / 2 - height.value / 2
             );
             cube.castShadow = true;
@@ -255,29 +359,34 @@ const onMouseMove = (event) => {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
+    const hits = raycaster.intersectObjects(scene.children, true);
 
     if (hoveredObject) {
-        hoveredObject.material.emissive?.setHex(hoveredObject.currentHex);
+        hoveredObject.material?.emissive?.setHex(hoveredObject.currentHex || 0);
         hoveredObject = null;
     }
 
-    if (intersects.length) {
-        const intersected = intersects[0].object;
-        hoveredObject = intersected;
-        intersected.currentHex = intersected.material.emissive?.getHex() || 0;
-        intersected.material.emissive?.setHex(0xaaaaaa);
+    if (!hits.length) return;
 
-        if (intersected.userData?.w) {
-            emit("hoverItem", intersected.userData);
-            emit("selectItem", intersected.userData);
-        } else {
-            const gridPos = intersects[0].point;
-            emit("hoverSquare", {
-                x: Math.floor(gridPos.x + width.value / 2),
-                y: Math.floor(gridPos.z + height.value / 2),
-            });
-        }
+    const itemHit = hits.find(h => h.object?.userData?.w);
+    if (itemHit) {
+        const obj = itemHit.object;
+        hoveredObject = obj;
+        obj.currentHex = obj.material.emissive?.getHex() || 0;
+        obj.material.emissive?.setHex(0xaaaaaa);
+        emit("hoverItem", obj.userData);
+        emit("selectItem", obj.userData);
+        return;
+    }
+
+    const floorHit = hits.find(h => h.object?.userData?.isFloor);
+    if (floorHit) {
+        const p = floorHit.point;
+        emit("hoverSquare", {
+            x: Math.floor(p.x + width.value / 2),
+            y: Math.floor(p.z + height.value / 2),
+        });
+        return;
     }
 };
 
@@ -359,6 +468,7 @@ watch(
     () => {
         renderItems();
         addFloor();
+        addWalls();
     },
     { deep: true }
 );
@@ -367,6 +477,7 @@ watch(
     () => {
         renderItems();
         addFloor();
+        addWalls();
     },
     { deep: true }
 );
@@ -381,6 +492,7 @@ watch(
             init3DScene();
             renderItems();
             addFloor();
+            addWalls();
         }
     },
     { deep: true }
@@ -388,15 +500,28 @@ watch(
 </script>
 
 <template>
-    <div ref="container" :style="{
-        width: '100%',
-        maxWidth: '100%',
-        height: '100%',
-        position: 'relative',
-        overflow: 'hidden',
-        resize: 'both',
-    }" class="grid-plan-grid-3d" @mouseleave="emit('unselect')">
-        <canvas ref="canvas" @mousemove="onMouseMove"
-            :style="{ display: 'block', width: '100%', height: '100%' }"></canvas>
+    <div 
+        ref="container" 
+        :style="{
+            width: '100%',
+            maxWidth: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            resize: 'both',
+        }" 
+        class="grid-plan-grid-3d" 
+        @mouseleave="emit('unselect')"
+    >
+        <canvas 
+            ref="canvas" 
+            @mousemove="onMouseMove"
+            :style="{ 
+                display: 'block', 
+                width: '100%', 
+                height: '100%' 
+                }"
+        >
+        </canvas>
     </div>
 </template>

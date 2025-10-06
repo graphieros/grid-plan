@@ -1,20 +1,21 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 import LocalGridPlan from './components/GridPlan.vue';
+import { GridPlanItem } from "grid-plan";
+import { GridPlanItemType } from "grid-plan";
 
-const types = ref([
+const types = ref<GridPlanItem[]>([
 {
     color: '#BBCCCC',
     description: 'door',
-    initial: 'D',
     typeId: 1,
     icon: 'door',
-    iconColor: '#1A1A1A'
+    iconColor: '#1A1A1A',
+    depth: 1
   },
   {
     color: '#8A8A8A',
     description: 'wall',
-    initial: 'W',
     typeId: 2,
     icon: 'wall',
     iconColor: '#1A1A1A'
@@ -22,15 +23,14 @@ const types = ref([
   {
     color: '#3366DD',
     description: 'server',
-    initial: 'C',
     typeId: 3,
     icon: 'server',
-    iconColor: '#FFFFFF'
+    iconColor: '#FFFFFF',
+    depth: 0.5
   },
   {
     color: "#DD6633",
     description: "power",
-    initial: 'P',
     typeId: 4,
     icon: 'bolt',
     iconColor: 'yellow'
@@ -38,7 +38,6 @@ const types = ref([
   {
     color: "#71a4a8",
     description: "monitor",
-    initial: 'M',
     typeId: 5,
     icon: 'deviceLaptop',
     iconColor: "white"
@@ -46,7 +45,6 @@ const types = ref([
   {
     color: '#1A1A1A',
     description: "router",
-    initial: 'R',
     typeId: 6,
     icon: 'router',
     iconColor: '#FFFFFF'
@@ -54,7 +52,6 @@ const types = ref([
   {
     color: '#7aebab',
     description: "database",
-    initial: 'D',
     typeId: 7,
     icon: 'database',
     iconColor: '#1A1A1A'
@@ -62,7 +59,6 @@ const types = ref([
   {
     color: '#f595e5',
     description: "phone",
-    initial: 'P',
     typeId: 8,
     icon: 'phone',
     iconColor: '#1A1A1A'
@@ -70,7 +66,6 @@ const types = ref([
   {
     color: '#95d5f5',
     description: "AC",
-    initial: 'P',
     typeId: 8,
     icon: 'airConditioning',
     iconColor: '#1A1A1A'
@@ -78,6 +73,7 @@ const types = ref([
 ])
 
 const items = ref([
+  { x: 0, y: 0, h: 1, w: 1, typeId: 1},
 ])
 
 const config = ref({
@@ -91,7 +87,7 @@ const config = ref({
   gridHighlightColor: "#00FF00",
   gridStroke: "#1A1A1A",
   gridStrokeWidth: 0.02,
-  gridWidth: 20,
+  gridWidth: 10,
   handleFill: "#FFFFFF",
   handleSize: 0.3,
   iconColor: "#1A1A1A",
@@ -101,7 +97,11 @@ const config = ref({
   useGradient: true,
   useShadow: true,
   showGrid3d: true,
-  grid3dPosition: 'top'
+  grid3dPosition: 'top',
+  showBox: true,
+  boxThickness: 0.3,
+  boxColor: '#5A5A5A',
+  boxHeight: 1,
 })
 
 // setTimeout(() => {
@@ -220,11 +220,11 @@ function createdItem(item) {
         </div>
       </template>
 
-      <template #availableType="{ availableType }">
+      <template #availableType="{ availableType }: { availableType: GridPlanItemType}">
         {{ availableType.description }}
       </template>
 
-      <template #componentIcon="{ placedItem, maxSize }">
+      <template #componentIcon="{ placedItem, maxSize }: { placedItem: GridPlanItem, maxSize: number}">
 
       <svg xmlns="http://www.w3.org/2000/svg" v-if="placedItem.description === 'power'" viewBox="0 0 24 24" stroke-width="1.5" stroke="#FFFFFF" fill="none" stroke-linecap="round" stroke-linejoin="round" :style="`width:${maxSize}px; scale(0.8, 0.8);`">
         <path stroke="none" d="M0 0h24v24H0z" fill="none"/>

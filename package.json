@@ -4,46 +4,25 @@
   "private": false,
   "type": "module",
   "description": "A Vue3 dynamic 2d grid component ideal to view and arrange elements on a room, datacenter or rack blueprint.",
-  "keywords": [
-    "grid",
-    "vue",
-    "2d grid",
-    "3d",
-    "plan",
-    "blueprint",
-    "room",
-    "datacenter",
-    "rack",
-    "component"
-  ],
+  "keywords": ["grid","vue","2d grid","3d","plan","blueprint","room","datacenter","rack","component"],
   "author": "Alec Lloyd Probert",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/graphieros/grid-plan.git"
-  },
+  "repository": { "type": "git", "url": "git+https://github.com/graphieros/grid-plan.git" },
   "homepage": "https://grid-plan.graphieros.com/",
   "license": "MIT",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
+  "sideEffects": false,
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/grid-plan.d.ts",
-        "default": "./dist/grid-plan.js"
-      },
-      "default": {
-        "types": "./dist/types/grid-plan.d.cts",
-        "default": "./dist/grid-plan.cjs"
-      }
+      "types": "./dist/types/grid-plan.d.ts",
+      "import": "./dist/grid-plan.js",
+      "default": "./dist/grid-plan.js"
     }
   },
-  "main": "./dist/grid-plan.cjs",
   "module": "./dist/grid-plan.js",
   "types": "./dist/types/grid-plan.d.ts",
   "scripts": {
     "clean": "node cleanup.cjs",
-    "dev": "node add-dev-dep.cjs && npm i && vite",
+    "dev": "vite",
     "build": "npm run clean && vite build --mode production && node copy-types.cjs",
     "preview": "vite preview",
     "test": "vitest",
@@ -51,18 +30,20 @@
     "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^6.0.1",
     "@vue/test-utils": "^2.4.6",
     "cypress": "^13.12.0",
     "jsdom": "^24.1.0",
     "start-server-and-test": "^2.0.4",
-    "vite": "^6.2.4",
+    "vite": "^7.1.9",
     "vitest": "^3.0.5",
-    "vue": "^3.5.13",
-    "three": "^0.173.0",
-    "grid-plan": "file:../grid-plan"
+    "vue": "^3.5.22"
   },
   "peerDependencies": {
-    "vue": "^3.3.0"
+    "vue": "^3.3.0",
+    "three": "^0.173.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -24,5 +24,9 @@
     "tooltipColor": "#FFFFFF",
     "useAccordionMenu": true,
     "useGradient": true,
-    "useShadow": true
+    "useShadow": true,
+    "showBox": true,
+    "boxThickness": 0.3,
+    "boxHeight": 1,
+    "boxColor": "#5A5A5A"
 }
