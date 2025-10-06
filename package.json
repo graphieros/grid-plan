@@ -1,15 +1,31 @@
 {
   "name": "grid-plan",
-  "version": "2.0.16",
+  "version": "3.0.0",
   "private": false,
   "type": "module",
   "description": "A Vue3 dynamic 2d grid component ideal to view and arrange elements on a room, datacenter or rack blueprint.",
-  "keywords": ["grid","vue","2d grid","3d","plan","blueprint","room","datacenter","rack","component"],
+  "keywords": [
+    "grid",
+    "vue",
+    "2d grid",
+    "3d",
+    "plan",
+    "blueprint",
+    "room",
+    "datacenter",
+    "rack",
+    "component"
+  ],
   "author": "Alec Lloyd Probert",
-  "repository": { "type": "git", "url": "git+https://github.com/graphieros/grid-plan.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/graphieros/grid-plan.git"
+  },
   "homepage": "https://grid-plan.graphieros.com/",
   "license": "MIT",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "exports": {
     ".": {
