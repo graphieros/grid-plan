@@ -9,12 +9,23 @@ declare module "grid-plan" {
     export type ItemStateGetter<T extends GridPlanItem = GridPlanItem> =
         ((item: Readonly<T>) => boolean) & (() => boolean);
 
+    export type GridPlanExpose = {
+        deleteItem(item: GridPlanItem): void
+        focusItem(item: GridPlanItem): void
+        getActiveItem(): GridPlanItem
+        getFocusState(item: GridPlanItem): boolean
+        getItems(): GridPlanItem[]
+        selectItem(item: GridPlanItem): void
+        setActiveType(t: GridPlanItemType): void
+        unselect(): void
+    }
+
     export const GridPlan: DefineComponent<{
         placedItems: GridPlanItem[];
         availableTypes: GridPlanItemType[];
         readonly?: boolean;
         config?: GridPlanConfig;
-    }>;
+    }, GridPlanExpose>;
 
     export type Coordinates = {
         x?: number;
@@ -79,6 +90,7 @@ declare module "grid-plan" {
         boxThickness?: number;
         boxHeight?: number;
         boxColor?: string;
+        showMenu?: boolean;
     };
 
     /**

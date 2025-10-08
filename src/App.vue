@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import LocalGridPlan from './components/GridPlan.vue';
 import { GridPlanItem } from "grid-plan";
 import { GridPlanItemType } from "grid-plan";
@@ -102,6 +102,7 @@ const config = ref({
   boxThickness: 0.3,
   boxColor: '#5A5A5A',
   boxHeight: 1,
+  showMenu: false,
 })
 
 // setTimeout(() => {
@@ -137,6 +138,14 @@ function unselect() {
 function createdItem(item) {
   // console.log('CREATED',item)
 }
+
+const utils = computed(() => {
+  const ready = !!plan.value
+  return {
+    setActiveType: ready ? plan.value.setActiveType : (_) => {},
+    
+  }
+})
 
 </script>
 
@@ -183,6 +192,12 @@ function createdItem(item) {
     </svg>
       </template>
     </GridPlan> -->
+
+    <div style="padding:12px; background: #5A5A5A">
+      <div v-for="type in types" @click="utils.setActiveType(type)">
+        {{  type.description }}
+      </div>
+    </div>
     
     <LocalGridPlan 
       :availableTypes="types" 

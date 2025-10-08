@@ -157,8 +157,14 @@ function getFocusState(item) {
 }
 
 defineExpose({
+  deleteItem,
+  focusItem,
+  getActiveItem: () => entity.value,
+  getFocusState,
   getItems,
-  unselect
+  selectItem,
+  setActiveType,
+  unselect,
 })
 
 </script>
@@ -177,22 +183,24 @@ defineExpose({
       @unselect="unselect"
     />
 
-    <details v-if="finalConfig.useAccordionMenu" class="grid-plan-menu">
-      <summary class="grid-plan-menu__summary">
-        {{ finalConfig.accordionMenuTitle }}
-      </summary>
-      <div class="grid-plan-menu__body">
+    <template v-if="finalConfig.showMenu">
+      <details v-if="finalConfig.useAccordionMenu" class="grid-plan-menu">
+        <summary class="grid-plan-menu__summary">
+          {{ finalConfig.accordionMenuTitle }}
+        </summary>
+        <div class="grid-plan-menu__body">
+          <div v-for="t in availableTypes" @click="setActiveType(t)">
+            <slot name="availableType" v-bind="{ availableType: t }"/>
+          </div>
+        </div>
+      </details>
+  
+      <div v-else class="grid-plan-menu">
         <div v-for="t in availableTypes" @click="setActiveType(t)">
           <slot name="availableType" v-bind="{ availableType: t }"/>
         </div>
       </div>
-    </details>
-
-    <div v-else class="grid-plan-menu">
-      <div v-for="t in availableTypes" @click="setActiveType(t)">
-        <slot name="availableType" v-bind="{ availableType: t }"/>
-      </div>
-    </div>
+    </template>
 
     <details v-if="finalConfig.showInventory && items.length" class="grid-plan-inventory">
         <summary class="grid-plan-inventory__summary">
@@ -204,6 +212,7 @@ defineExpose({
           </div>
         </div>
     </details>
+
     <Grid
       :readonly="readonly"
       :key="`2d_${step}`" 
