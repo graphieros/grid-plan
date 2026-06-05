@@ -20,6 +20,9 @@ import {
     LineBasicMaterial,
     LineSegments,
     BoxGeometry,
+    TextureLoader,
+    RepeatWrapping,
+    SRGBColorSpace,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import {
@@ -183,6 +186,38 @@ function createWalls(w, h) {
     return walls;
 }
 
+const textureLoader = new TextureLoader();
+const textureCache = new Map();
+
+function createTexture(textureConfig) {
+    if (!textureConfig?.src) return null;
+    const cacheKey = JSON.stringify(textureConfig);
+    if (textureCache.has(cacheKey)) {
+        return textureCache.get(cacheKey);
+    }
+    const texture = textureLoader.load(textureConfig.src);
+    texture.colorSpace = SRGBColorSpace;
+    texture.wrapS = RepeatWrapping;
+    texture.wrapT = RepeatWrapping;
+    texture.repeat.set(
+        textureConfig.repeatX ?? 1,
+        textureConfig.repeatY ?? 1
+    );
+    texture.rotation = textureConfig.rotation ?? 0;
+    texture.center.set(0.5, 0.5);
+    textureCache.set(cacheKey, texture);
+    return texture;
+}
+
+function createItemMaterial(item) {
+    const texture = createTexture(item.texture);
+    return new MeshStandardMaterial({
+        color: texture ? 0xffffff : item.color,
+        map: texture,
+        metalness: item.texture?.metalness ?? 0.7,
+        roughness: item.texture?.roughness ?? 0.4,
+    });
+}
 
 const init3DScene = () => {
     scene = new Scene();
@@ -305,11 +340,7 @@ const renderItems = () => {
                 item.depth ?? 1,
                 item.h - SPACING
             );
-            const material = new MeshStandardMaterial({
-                color: item.color,
-                metalness: 0.7,
-                roughness: 0.4,
-            });
+            const material = createItemMaterial(item);
 
             if (props.activeEntity && item === props.activeEntity) {
                 material.emissive = new Color(

@@ -165,6 +165,10 @@ function getSVGCoords(evt, svg) {
     };
 }
 
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+
 function move(e) {
     if (!isDown.value || props.readonly) return;
 
@@ -179,11 +183,19 @@ function move(e) {
     if (resizingHandle.value) {
         resizeEntity(rounded);
     } else {
-        const newX = Math.round(coordinates.x - entity.value.w / 2);
-        const newY = Math.round(coordinates.y - entity.value.h / 2);
+        const newX = clamp(
+            Math.round(coordinates.x - entity.value.w / 2),
+            0,
+            width.value - entity.value.w
+        );
+
+        const newY = clamp(
+            Math.round(coordinates.y - entity.value.h / 2),
+            0,
+            height.value - entity.value.h
+        );
 
         if (isColliding(newX, newY, entity.value.w, entity.value.h)) return;
-        if (isOverflowing(newX, newY, entity.value.w, entity.value.h)) return;
 
         entity.value.x = newX;
         entity.value.y = newY;
@@ -303,6 +315,18 @@ const iconKeys = computed(() => {
 
 function isValidIcon(icon) {
     return iconKeys.value.includes(icon)
+}
+
+function getTexturePatternId(item) {
+    return `grid-plan-texture-${item.id ?? `${item.x}-${item.y}-${item.w}-${item.h}`}`;
+}
+
+function getItemFill(item) {
+    if (item.texture?.src) {
+        return `url(#${getTexturePatternId(item)})`;
+    }
+
+    return item.color || '#FFFFFF';
 }
 
 </script>
@@ -457,7 +481,7 @@ function isValidIcon(icon) {
                 :y="placedItem.y"
                 :height="placedItem.h"
                 :width="placedItem.w"
-                :fill="placedItem.color || '#FFFFFF'"
+                :fill="getItemFill(placedItem)"
                 :stroke="config.gridStroke"
                 :stroke-width="config.gridStrokeWidth"
                 @click="selectItem(placedItem)"
@@ -469,6 +493,26 @@ function isValidIcon(icon) {
                     <stop offset="0%" stop-color="#FFFFFF00" />
                     <stop offset="100%" stop-color="#FFFFFF20" />
                 </radialGradient>
+
+                <template v-for="placedItem in [...items, entity]">
+                    <pattern
+                        v-if="placedItem.x !== undefined && placedItem.texture?.src"
+                        :id="getTexturePatternId(placedItem)"
+                        patternUnits="objectBoundingBox"
+                        patternContentUnits="objectBoundingBox"
+                        width="1"
+                        height="1"
+                    >
+                        <image
+                            :href="placedItem.texture.src"
+                            x="0"
+                            y="0"
+                            width="1"
+                            height="1"
+                            preserveAspectRatio="none"
+                        />
+                    </pattern>
+                </template>
             </defs>
 
             <g v-if="config.useGradient">
@@ -492,7 +536,7 @@ function isValidIcon(icon) {
                 :y="entity.y" 
                 :width="entity.w" 
                 :height="entity.h" 
-                :fill="entity.color || '#FFFFFF'"
+                :fill="getItemFill(entity)"
                 :stroke="config.gridStroke"
                 :stroke-width="config.gridStrokeWidth"
                 @mousedown="isDown = true" 

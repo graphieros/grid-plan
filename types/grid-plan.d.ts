@@ -47,6 +47,15 @@ declare module "grid-plan" {
         depth?: number;
     };
 
+    export type GridPlanTexture = {
+        src: string; 
+        repeatX?: number; 
+        repeatY?: number; 
+        rotation?: number; 
+        metalness?: number; 
+        roughness?: number;
+    }
+
     export type GridPlanItem = Prettify<
         Coordinates &
         ItemSize & {
@@ -56,6 +65,7 @@ declare module "grid-plan" {
             typeId: number | string;
             id?: string | number;
             iconColor?: string;
+            texture?: GridPlanTexture;
         }
     >;
 
