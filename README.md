@@ -25,16 +25,19 @@ grid-plan ships with:
 ## Installation
 
 ```
-npm i grid-plan
+pnpm add grid-plan
 ```
 
-Grid Plan requires Three.js as peer dependency.
+Three.js is an optional peer dependency, required only when displaying the 3D layout.
+For 2D-only usage, install `grid-plan` and set `showGrid3d` to `false`:
+
+```html
+<GridPlan :config="{ showGrid3d: false }" />
+```
+
+The 3D layout is enabled by default. To use it, install Three.js:
 
 ```bash
-npm install grid-plan three
-# or
-yarn add grid-plan three
-# or
 pnpm add grid-plan three
 ```
 
@@ -126,10 +129,12 @@ const config = ref({
   handleFill: "#FFFFFF",
   handleSize: 0.3,
   iconColor: "#1A1A1A",
+  showIcons: true,
   nonSelectedOpacity: 0.3,
   ordinatesType: "numeric",
   showCrosshair: true,
   showGrid3d: true,
+  showGrid2d: true,
   tooltipColor: "#FFFFFF",
   useAccordionMenu: true,
   useGradient: true,
@@ -282,6 +287,8 @@ function unselected() {
 | coordinatesColor      | string                    | "#8A8A8A"    | Text color of the coordinates cells                                 |
 | crosshairBackground   | string                    | "#4A4A4A"    | Background color of the crosshair                                   |
 | fontFamily            | string                    | "Arial"      | Font used for all elements in the component                         |
+| itemNameFontSizeRatio      | number                    | 0.4          | 2D hovered and selected item name font size, in grid units            |
+| itemCoordinatesFontSizeRatio | number                  | 0.4          | 2D hovered and selected item coordinates font size, in grid units     |
 | grid3dPosition        | "top" OR "bottom"         | "top"        | Display 3d blueprint on top or below                                |
 | gridFill              | string                    | "#3A3A3A"    | Background color of unused blueprint cells                          |
 | gridHeight            | number                    | 20           | The height of the blueprint in cell units                           |
@@ -291,11 +298,13 @@ function unselected() {
 | handleFill            | string                    | "#FFFFFF"    | The color of resize handles                                         |
 | handleSize            | number                    | 0.3          | The handle size                                                     |
 | iconColor             | string                    | "#1A1A1A"    | The text color when using the #componentText slot                   |
+| showIcons             | boolean                   | true         | Show item icons in 2D and 3D, including the componentIcon slot     |
 | inventoryTitle        | string                    | "Inventory"  | The text content of the inventory details summary element           |
 | nonSelectedOpacity    | number                    | 0.3          | The opacity of non selected components when a component is selected |
 | ordinatesType         | "alphabetic" OR "numeric" | "numeric"    | Display ordinate coordinates as letters or numbers                  |
 | showCrosshair         | boolean                   | true         | Show crosshair when hovering available cells                        |
 | showGrid3d            | boolean                   | true         | Show the 3d blueprint                                               |
+| showGrid2d            | boolean                   | true         | Show the 2d blueprint                                               |
 | showInventory         | boolean                   | true         | Show inventory of placed components inside a details HTML element   |
 | tooltipColor          | string                    | "#FFFFFF"    | The tooltip text color                                              |
 | useAccordionMenu      | boolean                   | true         | Display the menu inside a details HTML element                      |
@@ -305,6 +314,125 @@ function unselected() {
 | boxThickness          | number                    | 0.3          | Box thickness, defaults to 1/3 of a grid cell                       |
 | boxHeight             | number                    | 1            | Box height, defaults to the same size as a grid cell                |
 | boxColor              | string                    | "#5A5A5A"    | Box color                                                           |
+
+## Custom item icons
+
+`availableTypes[].icon` accepts a built-in name (for example `"server"`), a raw SVG
+`d` string, an array of `d` strings, or a custom definition. These icons render in
+the 2D blueprint and on the top face of 3D items, and inherit `iconColor`. Strings and arrays use a `0 0 24 24`
+viewBox and an outline style.
+
+```js
+const availableTypes = [
+  {
+    typeId: 'custom',
+    description: 'Custom equipment',
+    color: '#6385ed',
+    iconColor: '#ffffff',
+    icon: 'M12 3L21 12L12 21L3 12Z',
+  },
+  {
+    typeId: 'filled',
+    description: 'Filled icon',
+    icon: {
+      paths: ['M4 4H28V28H4Z'],
+      viewBox: '0 0 32 32',
+      fill: 'currentColor',
+      stroke: 'none',
+      // strokeWidth: 1.44, // default for outline icons, in viewBox units
+    },
+  },
+];
+```
+
+Pass the contents of SVG `d` attributes, rather than an SVG markup string or an
+image URL. The custom definition accepts `paths` as either a string or an array.
+For arbitrary icon components or HTML, use the existing `componentIcon` slot.
+Set `config.showIcons` to `false` to hide item icons in both views. It defaults to
+`true` and also controls the `componentIcon` slot in both views. Text labels and delete-button
+icons remain visible.
+
+## Icon libraries with span or i elements
+
+The `componentIcon` slot works in both views for items without a valid `icon`
+definition. Load your library's CSS normally, then render its element:
+
+```html
+<GridPlan :placed-items="placedItems" :available-types="availableTypes">
+  <template #componentIcon="{ placedItem, maxSize, iconColor }">
+    <i
+      :class="iconClasses[placedItem.typeId]"
+      aria-hidden="true"
+      :style="{
+        fontSize: `${maxSize * 0.7}px`,
+        lineHeight: 1,
+        color: placedItem.iconColor || iconColor,
+      }"
+    />
+  </template>
+</GridPlan>
+```
+
+`iconClasses` maps your type IDs to your library's CSS classes. You can replace
+`i` with `span` or a Vue icon component. Omit the type's `icon` property to use
+this slot. `maxSize` is `32` pixels in both views. Size library icons in this
+pixel-sized container using the font-size calculation shown above. The container scales to one grid unit, independently of the item's size,
+so 1×1 items and larger items use the same icon size. In 3D, HTML icons lie on the
+top face and follow the camera's perspective using CSS3DRenderer. They follow
+edits, allow pointer interactions through them, and respect `showIcons`.
+
+CSS3D icons are DOM elements layered over WebGL: other meshes do not occlude them.
+Use SVG path icons when WebGL depth occlusion is needed.
+
+## Custom delete icon
+
+Use the `deleteIcon` slot to replace the cross inside the selected item's floating
+delete button in both 2D and 3D. It receives `{ item }`, the selected item. The
+button keeps its delete action, accessible label, and readonly behavior.
+
+```html
+<GridPlan :placed-items="placedItems" :available-types="availableTypes">
+  <template #deleteIcon="{ item }">
+    <svg viewBox="0 0 24 24" style="width: 100%; height: 100%" aria-hidden="true">
+      <path d="M6 6L18 18M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" />
+    </svg>
+  </template>
+</GridPlan>
+```
+
+You can also render an icon component in this slot. Size it to fill its container
+with `width: 100%; height: 100%`. Omitting the slot preserves the default cross.
+
+## Editing in 3D
+
+The 3D blueprint supports the same `created`, `change`, `delete`, `select`, and
+`unselect` events as the 2D blueprint. Both views share the same items and selection.
+
+- Click an empty floor cell to create an item using the active type.
+- Hover an empty floor cell to see its highlight and coordinates. `showCrosshair`
+  controls the row and column shading; the cell indicator also works in readonly mode.
+- Drag an item to move it. Movement snaps to grid cells.
+- Select an item and drag one of its four corner handles to resize its footprint.
+- Use the selected item's Depth field to change its vertical size, or Delete to remove it.
+- Press Escape to cancel an ongoing drag and clear the selection.
+- Drag empty space to orbit the camera; use the mouse wheel to zoom.
+
+Moving and resizing respect grid boundaries and prevent overlaps. The `readonly`
+prop disables creation, movement, resizing, depth changes, and deletion while
+keeping selection and camera navigation available.
+
+To display only the 3D blueprint, install the optional `three` peer dependency and use:
+
+```html
+<GridPlan
+  :placed-items="placedItems"
+  :available-types="availableTypes"
+  :config="{ showGrid2d: false, showGrid3d: true }"
+/>
+```
+
+The menu, inventory, and slots remain available in this mode. The 3D container
+starts at 480px tall and can be resized using its corner.
 
 ## CSS classes
 
@@ -471,3 +599,18 @@ const availableTypes = ref([
 | windmillOff         |
 | window              |
 | world               |
+
+## Local playground development
+
+The standalone demo lives in [`playground/`](playground/README.md) and consumes
+the current package through its built `dist` exports. Install workspace dependencies, then run `pnpm run dev` from the root. This builds and watches the
+library alongside the playground. Use `pnpm run build:playground` to build the
+demo, or `pnpm run test:playground` for its tests.
+
+The package also exports `defaultConfig`, which the playground uses to initialize
+its configuration controls:
+
+```js
+import { GridPlan, defaultConfig } from 'grid-plan';
+const config = { ...defaultConfig };
+```

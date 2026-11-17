@@ -1,9 +1,10 @@
 <script setup >
-import { ref, computed, onMounted, toRefs, watch } from "vue"
+import { ref, computed, defineAsyncComponent, onMounted, toRefs, watch } from "vue"
 import Grid from "./Grid.vue";
-import Grid3d from "./Grid3d.vue";
 import { createUid, useNestedProp } from "../lib";
 import defaultConfig from "../default_config.json"
+
+const Grid3d = defineAsyncComponent(() => import("./Grid3d.vue"));
 
 const props = defineProps({
   placedItems: {
@@ -92,6 +93,7 @@ const finalConfig = computed(() => {
 })
 
 function recordChange(entity) {
+  step.value += 1;
   emit('change', entity)
 }
 
@@ -180,8 +182,18 @@ defineExpose({
       :config="finalConfig"
       :readonly="readonly"
       @selectItem="selectItem"
+      @change="recordChange"
+      @triggerAction="triggerAction"
+      @delete="deleteItem"
       @unselect="unselect"
-    />
+    >
+      <template v-if="$slots.componentIcon" #componentIcon="slotProps">
+        <slot name="componentIcon" v-bind="slotProps" />
+      </template>
+      <template v-if="$slots.deleteIcon" #deleteIcon="slotProps">
+        <slot name="deleteIcon" v-bind="slotProps" />
+      </template>
+    </Grid3d>
 
     <template v-if="finalConfig.showMenu">
       <details v-if="finalConfig.useAccordionMenu" class="grid-plan-menu">
@@ -214,6 +226,7 @@ defineExpose({
     </details>
 
     <Grid
+      v-if="finalConfig.showGrid2d"
       :readonly="readonly"
       :key="`2d_${step}`" 
       :items="items" 
@@ -226,8 +239,12 @@ defineExpose({
       @unselect="unselect"
     >
 
-    <template #componentIcon="{ placedItem, maxSize, availableTypes }">
-        <slot name="componentIcon" v-bind="{ placedItem, maxSize, availableTypes }"/>
+    <template v-if="$slots.deleteIcon" #deleteIcon="slotProps">
+      <slot name="deleteIcon" v-bind="slotProps" />
+    </template>
+
+    <template v-if="$slots.componentIcon" #componentIcon="slotProps">
+      <slot name="componentIcon" v-bind="slotProps" />
     </template>
 
     <template #componentText="{ placedItem, availableTypes }">
@@ -238,13 +255,23 @@ defineExpose({
   <Grid3d
     v-if="finalConfig.grid3dPosition === 'bottom' && finalConfig.showGrid3d"
     :items="items" 
-    :key="`3d_${step}`"
+    
     :active-entity="entity"
     :config="finalConfig"
     :readonly="readonly"
     @selectItem="selectItem"
+    @change="recordChange"
+    @triggerAction="triggerAction"
+    @delete="deleteItem"
     @unselect="unselect"
-  />
+  >
+    <template v-if="$slots.componentIcon" #componentIcon="slotProps">
+      <slot name="componentIcon" v-bind="slotProps" />
+    </template>
+    <template v-if="$slots.deleteIcon" #deleteIcon="slotProps">
+      <slot name="deleteIcon" v-bind="slotProps" />
+    </template>
+  </Grid3d>
   <slot name="after" v-bind="{ items, deleteItem, focusItem, getFocusState, activeEntity: entity }"/>
   </main>
 </template>

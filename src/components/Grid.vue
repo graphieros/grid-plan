@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, onMounted, onUnmounted, useSlots } from 'vue';
-import { icons } from '../icons';
-import { scaleSVGPath, parseSVG } from '../lib';
+import { resolveGridIcon } from '../lib/grid-icon';
+import { editFootprint } from '../lib/grid3d-edit';
 
 const props = defineProps({
     /**
@@ -142,9 +142,35 @@ const walls = ref(convertElementsToIndividualWalls(props.items.filter(el => el.i
 
 const entity = ref(props.activeEntity || {})
 
+const inactiveItems = computed(() => props.items.filter(item =>
+    item !== entity.value && (entity.value.id === undefined || item.id !== entity.value.id)
+));
+const displayedItems = computed(() => entity.value.x !== undefined
+    ? [...inactiveItems.value, entity.value]
+    : inactiveItems.value
+);
+
 const isDown = ref(false);
 const resizingHandle = ref(null);
 const initialDimensions = ref({ x: 0, y: 0, w: 0, h: 0 });
+let startPoint = null;
+let hasDragged = false;
+let suppressClick = false;
+
+function startMove(event) {
+    if (props.readonly) return;
+    const pointer = event.touches?.[0] ?? event;
+    startPoint = { x: pointer.clientX, y: pointer.clientY };
+    initialDimensions.value = { ...entity.value };
+    hasDragged = false;
+    suppressClick = false;
+    isDown.value = true;
+}
+
+function clickActive() {
+    if (!suppressClick) unselect();
+    suppressClick = false;
+}
 
 function getSVGCoords(evt, svg) {
     const pt = svg.createSVGPoint();
@@ -171,6 +197,10 @@ function clamp(value, min, max) {
 
 function move(e) {
     if (!isDown.value || props.readonly) return;
+
+    const pointer = e.touches?.[0] ?? e;
+    if (startPoint && Math.hypot(pointer.clientX - startPoint.x, pointer.clientY - startPoint.y) > 4) hasDragged = true;
+    if (!hasDragged) return;
 
     e.preventDefault();
 
@@ -218,54 +248,29 @@ function isOverflowing(x, y, w, h) {
 }
 
 function drop() {
+    if (!isDown.value || props.readonly) return;
     isDown.value = false;
     resizingHandle.value = null;
-    emit('change', entity.value);
+    suppressClick = hasDragged;
+    startPoint = null;
+    if (['x', 'y', 'w', 'h'].some(key => entity.value[key] !== initialDimensions.value[key])) {
+        emit('change', entity.value);
+    }
 }
 
 function startResize(handle) {
+    if (props.readonly) return;
+    startPoint = null;
+    hasDragged = true;
     isDown.value = true;
     resizingHandle.value = handle;
     initialDimensions.value = { ...entity.value };
 }
 
 function resizeEntity(coordinates) {
-    const deltaX = coordinates.x - initialDimensions.value.x;
-    const deltaY = coordinates.y - initialDimensions.value.y;
-
-    let newX = initialDimensions.value.x;
-    let newY = initialDimensions.value.y;
-    let newW = initialDimensions.value.w;
-    let newH = initialDimensions.value.h;
-
-    switch (resizingHandle.value) {
-        case 'top-left':
-            newX = Math.min(coordinates.x, initialDimensions.value.x + initialDimensions.value.w - 1);
-            newY = Math.min(coordinates.y, initialDimensions.value.y + initialDimensions.value.h - 1);
-            newW = Math.max(initialDimensions.value.w - deltaX, 1);
-            newH = Math.max(initialDimensions.value.h - deltaY, 1);
-            break;
-        case 'top-right':
-            newY = Math.min(coordinates.y, initialDimensions.value.y + initialDimensions.value.h - 1);
-            newW = Math.max(deltaX, 1);
-            newH = Math.max(initialDimensions.value.h - deltaY, 1);
-            break;
-        case 'bottom-left':
-            newX = Math.min(coordinates.x, initialDimensions.value.x + initialDimensions.value.w - 1);
-            newW = Math.max(initialDimensions.value.w - deltaX, 1);
-            newH = Math.max(deltaY, 1);
-            break;
-        case 'bottom-right':
-            newW = Math.max(deltaX, 1);
-            newH = Math.max(deltaY, 1);
-            break;
-    }
-
-    if (!isColliding(newX, newY, newW, newH) && !isOverflowing(newX, newY, newW, newH)) {
-        entity.value.x = newX;
-        entity.value.y = newY;
-        entity.value.w = newW;
-        entity.value.h = newH;
+    const next = editFootprint(initialDimensions.value, coordinates, resizingHandle.value, props.config);
+    if (!isColliding(next.x, next.y, next.w, next.h) && !isOverflowing(next.x, next.y, next.w, next.h)) {
+        Object.assign(entity.value, next);
     }
 }
 
@@ -273,12 +278,21 @@ function deleteEntity() {
     emit('delete', entity.value)
 }
 
-const activeEntityCoordinates = computed(() => {
-    if (entity.value.h === 1 && entity.value.w === 1) {
-        return `${gridCoordinates.value.abs[entity.value.x]}-${gridCoordinates.value.ord[entity.value.y]}`;
+function itemCoordinates(item) {
+    if (item.h === 1 && item.w === 1) {
+        return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]}`;
     }
-    return `${gridCoordinates.value.abs[entity.value.x]}-${gridCoordinates.value.ord[entity.value.y]}, ${gridCoordinates.value.abs[entity.value.x + entity.value.w - 1]}-${gridCoordinates.value.ord[entity.value.y + entity.value.h - 1]}`
-})
+    return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]}, ${gridCoordinates.value.abs[item.x + item.w - 1]}-${gridCoordinates.value.ord[item.y + item.h - 1]}`
+}
+
+const hoveredItem = ref(null);
+const itemNameFontSizeRatio = computed(() => props.config.itemNameFontSizeRatio ?? 0.4);
+const itemCoordinatesFontSizeRatio = computed(() => props.config.itemCoordinatesFontSizeRatio ?? 0.4);
+const infoItems = computed(() => {
+    const result = entity.value.x !== undefined ? [entity.value] : [];
+    if (hoveredItem.value && !result.some(item => item.id === hoveredItem.value.id)) result.push(hoveredItem.value);
+    return result;
+});
 
 const hoveredRect = ref(null)
 
@@ -309,13 +323,10 @@ const highlightedTooltipPosition = computed(() => {
     }
 });
 
-const iconKeys = computed(() => {
-    return Object.keys(icons)
-})
-
-function isValidIcon(icon) {
-    return iconKeys.value.includes(icon)
-}
+const decoratedItems = computed(() => displayedItems.value.map(item => ({
+    item,
+    icon: props.config.showIcons === false ? null : resolveGridIcon(item.icon),
+})));
 
 function getTexturePatternId(item) {
     return `grid-plan-texture-${item.id ?? `${item.x}-${item.y}-${item.w}-${item.h}`}`;
@@ -476,7 +487,7 @@ function getItemFill(item) {
             />
 
             <rect 
-                v-for="placedItem in items"
+                v-for="placedItem in inactiveItems"
                 :x="placedItem.x"
                 :y="placedItem.y"
                 :height="placedItem.h"
@@ -484,6 +495,8 @@ function getItemFill(item) {
                 :fill="getItemFill(placedItem)"
                 :stroke="config.gridStroke"
                 :stroke-width="config.gridStrokeWidth"
+                @mouseenter="hoveredItem = placedItem; hoveredRect = null"
+                @mouseleave="hoveredItem = null"
                 @click="selectItem(placedItem)"
                 :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }`"
             />
@@ -494,7 +507,7 @@ function getItemFill(item) {
                     <stop offset="100%" stop-color="#FFFFFF20" />
                 </radialGradient>
 
-                <template v-for="placedItem in [...items, entity]">
+                <template v-for="placedItem in displayedItems">
                     <pattern
                         v-if="placedItem.x !== undefined && placedItem.texture?.src"
                         :id="getTexturePatternId(placedItem)"
@@ -517,7 +530,7 @@ function getItemFill(item) {
 
             <g v-if="config.useGradient">
                 <rect 
-                    v-for="placedItem in items"
+                    v-for="placedItem in inactiveItems"
                     :x="placedItem.x + 0.2"
                     :y="placedItem.y + 0.2"
                     :height="placedItem.h - 0.4"
@@ -539,9 +552,11 @@ function getItemFill(item) {
                 :fill="getItemFill(entity)"
                 :stroke="config.gridStroke"
                 :stroke-width="config.gridStrokeWidth"
-                @mousedown="isDown = true" 
-                @touchstart="isDown = true"
-                @click="unselect"
+                @mouseenter="hoveredItem = entity; hoveredRect = null"
+                @mouseleave="hoveredItem = null"
+                @mousedown="startMove" 
+                @touchstart="startMove"
+                @click="clickActive"
                 :style="`cursor: ${readonly ? 'default' : 'move'}; ${config.useShadow ? '-webkit-filter: drop-shadow(0px 1px 0.5px rgba(0, 0, 0, 0.6)); filter: drop-shadow(0px 0px 0.5px rgba(0, 0, 0, 0.6))' : ''}`"
             />
 
@@ -557,7 +572,7 @@ function getItemFill(item) {
                 />
             </g>
 
-            <g v-for="placedItem in [...items, entity]">
+            <g v-for="{ item: placedItem, icon } in decoratedItems">
                 <text 
                     v-if="placedItem.x !== undefined && slots.componentText"
                     :x="placedItem.x + placedItem.w / 2"
@@ -569,30 +584,36 @@ function getItemFill(item) {
                 >
                     <slot name="componentText" v-bind="{placedItem, iconColor: config.iconColor}"/>
                 </text>
-                <foreignObject
-                    v-if="placedItem.x !== undefined && slots.componentIcon && !placedItem.icon"
-                    :x="placedItem.x"
-                    :y="placedItem.y"
-                    :height="placedItem.h"
-                    :width="placedItem.w"
+                <svg
+                    v-if="config.showIcons !== false && placedItem.x !== undefined && slots.componentIcon && !icon"
+                    class="grid-plan-component-icon"
+                    :x="placedItem.x + placedItem.w / 2 - 0.5"
+                    :y="placedItem.y + placedItem.h / 2 - 0.5"
+                    width="1" height="1" viewBox="0 0 32 32"
+                    preserveAspectRatio="xMidYMid meet" aria-hidden="true"
                     :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
                 >
-                    <div style="width: 100%; height:100%; display: flex; align-items:center; justify-content:center">
-                        <slot name="componentIcon" v-bind="{ placedItem, iconColor: config.iconColor, maxSize: Math.min(placedItem.w, placedItem.h) }"/>
-                    </div>
-                </foreignObject>
-                <g v-if="placedItem.icon && isValidIcon(placedItem.icon)">
-                    <path 
-                        v-for="path in parseSVG(icons[placedItem.icon])"
-                        fill="none"
-                        stroke-width="0.06"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        :stroke="placedItem.iconColor || config.iconColor"
-                        :d="scaleSVGPath(path.d, 24, { x: placedItem.x + (placedItem.w / 2) - 0.5, y: placedItem.y + placedItem.h / 2 - 0.5})"
-                        :style="`opacity:${ activeEntity.id !== undefined ? activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity : '1' }; pointer-events: none; user-select: none`"
-                    />
-                </g>
+                    <foreignObject x="0" y="0" width="32" height="32">
+                        <div xmlns="http://www.w3.org/1999/xhtml" :style="{
+                            width: '32px', height: '32px', display: 'grid', placeItems: 'center',
+                            fontSize: '22.4px', lineHeight: 1, color: placedItem.iconColor || config.iconColor,
+                        }">
+                            <slot name="componentIcon" v-bind="{ placedItem, iconColor: config.iconColor, maxSize: 32 }"/>
+                        </div>
+                    </foreignObject>
+                </svg>
+                <svg v-if="icon"
+                    :x="placedItem.x + placedItem.w / 2 - 0.5"
+                    :y="placedItem.y + placedItem.h / 2 - 0.5"
+                    width="1" height="1" :viewBox="icon.viewBox"
+                    preserveAspectRatio="xMidYMid meet" aria-hidden="true"
+                    :style="{ color: placedItem.iconColor || config.iconColor,
+                        opacity: activeEntity.id !== undefined && activeEntity.id !== placedItem.id ? config.nonSelectedOpacity : 1,
+                        pointerEvents: 'none' }">
+                    <path v-for="(path, index) in icon.paths" :key="index" :d="path"
+                        :fill="icon.fill" :stroke="icon.stroke" :stroke-width="icon.strokeWidth"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
             </g>
 
             <!-- HANDLES -->
@@ -642,16 +663,24 @@ function getItemFill(item) {
             <!-- BUTTONS -->
             <g v-if="!readonly && activeEntity && activeEntity.x !== undefined">        
                 <circle 
-                    :cx="entity.x + entity.w - 0.5"
+                    :cx="entity.x + entity.w / 2"
                     :cy="entity.y - 1"
                     :r="0.5"
                     :fill="'#CCCCCC66'"
                     @click="deleteEntity"
                     style="cursor: pointer"
                 />
+                <foreignObject v-if="slots.deleteIcon"
+                    :x="entity.x + entity.w / 2 - 0.3" :y="entity.y - 1.3"
+                    width="0.6" height="0.6" style="pointer-events: none; overflow: hidden;">
+                    <div style="display: grid; place-items: center; width: 100%; height: 100%; color: white;">
+                        <slot name="deleteIcon" :item="entity" />
+                    </div>
+                </foreignObject>
+                <template v-else>
                 <line
-                    :x1="entity.x + entity.w - 0.75"
-                    :x2="entity.x + entity.w - 0.25"
+                    :x1="entity.x + entity.w / 2 - 0.25"
+                    :x2="entity.x + entity.w / 2 + 0.25"
                     :y1="entity.y - 0.75"
                     :y2="entity.y - 1.25"
                     :stroke="'white'"
@@ -660,8 +689,8 @@ function getItemFill(item) {
                     style="pointer-events: none;"
                 />
                 <line
-                    :x2="entity.x + entity.w - 0.75"
-                    :x1="entity.x + entity.w - 0.25"
+                    :x2="entity.x + entity.w / 2 - 0.25"
+                    :x1="entity.x + entity.w / 2 + 0.25"
                     :y1="entity.y - 0.75"
                     :y2="entity.y - 1.25"
                     :stroke="'white'"
@@ -669,6 +698,7 @@ function getItemFill(item) {
                     stroke-linecap="round"
                     style="pointer-events: none;"
                 />
+                </template>
             </g>
 
             <!-- TOOLTIPS -->
@@ -684,32 +714,32 @@ function getItemFill(item) {
                 {{ highlightedCoordinates }}
             </text>
 
+            <g v-for="infoItem in infoItems" :key="infoItem.id" class="grid-plan-item-info" style="pointer-events: none;">
             <text 
-                v-if="activeEntity && activeEntity.x !== undefined"
-                :x="entity.x + entity.w - entity.w / 2"
-                :y="entity.y + entity.h + 0.8"
-                :font-size="0.6"
+                :x="infoItem.x + infoItem.w - infoItem.w / 2"
+                :y="infoItem.y + infoItem.h + 0.5 + itemNameFontSizeRatio"
+                :font-size="itemNameFontSizeRatio"
                 :fill="config.tooltipColor"
                 :stroke="'black'"
                 :stroke-width="0.011"
                 style="pointer-events: none; user-select: none;"
                 text-anchor="middle"
             >
-                {{ activeEntityCoordinates }}
+                {{ infoItem.description }}
             </text>
             <text 
-                v-if="activeEntity && activeEntity.x !== undefined"
-                :x="entity.x + entity.w - entity.w / 2"
-                :y="entity.y + entity.h + 1.3"
-                :font-size="0.4"
+                :x="infoItem.x + infoItem.w - infoItem.w / 2"
+                :y="infoItem.y + infoItem.h + 0.8 + itemNameFontSizeRatio + itemCoordinatesFontSizeRatio"
+                :font-size="itemCoordinatesFontSizeRatio"
                 :fill="config.tooltipColor"
                 style="pointer-events: none; user-select: none;"
                 :stroke="'black'"
                 :stroke-width="0.011"
                 text-anchor="middle"
             >
-                {{ activeEntity.description }}
+                {{ itemCoordinates(infoItem) }}
             </text>
+            </g>
         </svg>
     </div>
 </template>

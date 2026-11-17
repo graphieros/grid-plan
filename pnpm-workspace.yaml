@@ -1,0 +1,13 @@
+packages:
+  - playground
+
+# Preserve the build-before-dev/test hooks in the playground.
+enablePrePostScripts: true
+
+overrides:
+  csstype: 3.1.3
+
+allowBuilds:
+  cypress: true
+  esbuild: true
+  fsevents: true

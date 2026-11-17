@@ -1,0 +1,17 @@
+@import './base.css';
+@import './playground.css';
+
+:root {
+  color-scheme: light;
+  --color-background: #f3f5f0;
+  --color-text: #243d2e;
+}
+
+#app { width: 100%; font-weight: normal; }
+button, input, select, textarea { font: inherit; color: inherit; }
+input, select, textarea { border: 1px solid #d7dfd4; border-radius: 5px; background: #fff; }
+input[type='checkbox'] { accent-color: #3c8053; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }
+button:not(:disabled):hover { filter: brightness(.96); }
+:focus-visible { outline: 2px solid #3c8053; outline-offset: 3px; }

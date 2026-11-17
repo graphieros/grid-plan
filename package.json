@@ -38,28 +38,35 @@
   "types": "./dist/types/grid-plan.d.ts",
   "scripts": {
     "clean": "node cleanup.cjs",
-    "dev": "vite",
-    "build": "npm run clean && vite build --mode production && node copy-types.cjs",
-    "preview": "vite preview",
+    "dev": "pnpm --dir playground run dev",
+    "build": "pnpm run clean && vite build --mode production && node copy-types.cjs",
+    "preview": "pnpm --dir playground run preview",
     "test": "vitest",
-    "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
-    "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'"
+    "test:e2e": "pnpm --dir playground run test:e2e",
+    "test:e2e:dev": "pnpm --dir playground run test:e2e:dev",
+    "build:playground": "pnpm --dir playground run build",
+    "test:playground": "pnpm --dir playground run test"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/test-utils": "^2.4.6",
-    "cypress": "^13.12.0",
     "jsdom": "^24.1.0",
-    "start-server-and-test": "^2.0.4",
+    "three": "^0.173.0",
     "vite": "^7.1.9",
     "vitest": "^3.0.5",
     "vue": "^3.5.22"
   },
   "peerDependencies": {
-    "vue": "^3.3.0",
-    "three": "^0.173.0"
+    "three": "^0.173.0",
+    "vue": "^3.3.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "packageManager": "pnpm@12.15.0"
 }

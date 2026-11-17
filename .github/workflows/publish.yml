@@ -1,0 +1,37 @@
+name: Publish Package
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm test --run
+
+      - run: pnpm run build
+
+      - name: Publish
+        run: |
+          TAG=$(node -p "const version = require('./package.json').version; const prerelease = version.match(/-(.+?)(\.|$)/); prerelease ? prerelease[1] : 'latest'")
+          pnpm publish --no-git-checks --tag "$TAG"

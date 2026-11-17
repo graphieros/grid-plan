@@ -27,6 +27,8 @@ declare module "grid-plan" {
         config?: GridPlanConfig;
     }, GridPlanExpose>;
 
+    export const defaultConfig: Required<GridPlanConfig>;
+
     export type Coordinates = {
         x?: number;
         y?: number;
@@ -38,10 +40,19 @@ declare module "grid-plan" {
         depth?: number;
     };
 
+    /** Built-in icon name, SVG path data (24×24), or a custom SVG definition. */
+    export type GridPlanIcon = string | string[] | {
+        paths: string | string[];
+        viewBox?: string;
+        fill?: string;
+        stroke?: string;
+        strokeWidth?: number;
+    };
+
     export type GridPlanItemType = {
         color?: string;
         description: string;
-        icon?: string;
+        icon?: GridPlanIcon;
         iconColor?: string;
         typeId: string | number;
         depth?: number;
@@ -61,7 +72,7 @@ declare module "grid-plan" {
         ItemSize & {
             color?: string;
             description?: string;
-            icon?: string;
+            icon?: GridPlanIcon;
             typeId: number | string;
             id?: string | number;
             iconColor?: string;
@@ -76,6 +87,10 @@ declare module "grid-plan" {
         coordinatesColor?: string;
         crosshairBackground?: string;
         fontFamily?: string;
+        /** 2D item label font size, in grid units. */
+        itemNameFontSizeRatio?: number;
+        /** 2D item coordinate font size, in grid units. */
+        itemCoordinatesFontSizeRatio?: number;
         grid3dPosition?: "top" | "bottom";
         gridFill?: string;
         gridHeight?: number;
@@ -90,7 +105,9 @@ declare module "grid-plan" {
         nonSelectedOpacity?: number;
         ordinatesType?: "alphabetic" | "numeric";
         showCrosshair?: boolean;
+        showIcons?: boolean;
         showGrid3d?: boolean;
+        showGrid2d?: boolean;
         showInventory?: boolean;
         tooltipColor?: string;
         useAccordionMenu?: boolean;
