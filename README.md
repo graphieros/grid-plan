@@ -307,6 +307,8 @@ function unselected() {
 | showGrid2d            | boolean                   | true         | Show the 2d blueprint                                               |
 | showInventory         | boolean                   | true         | Show inventory of placed components inside a details HTML element   |
 | tooltipColor          | string                    | "#FFFFFF"    | The tooltip text color                                              |
+| showTooltip           | boolean                   | false        | Show item tooltips in both views                                    |
+| tooltipPosition       | "top", "bottom", "left", "right" | "top" | Preferred item tooltip placement; flips automatically                |
 | useAccordionMenu      | boolean                   | true         | Display the menu inside a details HTML element                      |
 | useGradient           | boolean                   | true         | Shows components with a subtle gradient                             |
 | useShadow             | boolean                   | true         | Show selected item with a drop shadow                               |
@@ -384,6 +386,70 @@ edits, allow pointer interactions through them, and respect `showIcons`.
 CSS3D icons are DOM elements layered over WebGL: other meshes do not occlude them.
 Use SVG path icons when WebGL depth occlusion is needed.
 
+## Item tooltips
+
+Enable the optional tooltip in both views with:
+
+```js
+config: {
+  showTooltip: true,       // default: false
+  tooltipPosition: 'top',  // top, bottom, left, or right
+}
+```
+
+The hovered item takes priority; when the pointer leaves it, the selected item's
+tooltip is shown. Tooltips also work in readonly mode. When enabled, they replace
+the inline item labels. The preferred placement flips to the opposite side, then
+tries the other sides to stay inside the map. Tooltips stay centered on the item
+along the chosen side and constrain oversized content to the available space.
+Their position follows item edits, camera movement, and container resizing.
+
+All tooltip styles are configurable. These values preserve the default appearance:
+
+```js
+config: {
+  showTooltip: true,
+  tooltipColor: '#FFFFFF',
+  tooltipBackgroundColor: '#202622f2',
+  tooltipBorderRadius: 8,
+  tooltipLineHeight: 1.5,
+  tooltipPadding: '10px 14px',
+  tooltipBorder: '1px solid #ffffff30',
+  tooltipBoxShadow: '0 4px 16px #0003',
+  tooltipWidth: 280,
+  tooltipMaxWidth: 280,
+  tooltipMaxHeight: 400,
+}
+```
+
+Numeric sizes are pixels; CSS length strings such as `'1rem'`, `'50%'`, or
+`'calc(100% - 20px)'` are also accepted. Numeric `tooltipLineHeight` values are
+unitless. Automatic boundary limits still apply to `maxWidth` and `maxHeight`,
+so a larger configured tooltip stays within its map. Styles apply to default
+content and custom slot content alike. These controls are in the playground's
+**Tooltip** section; the color text inputs also accept alpha values.
+
+Customize the content with the `tooltip` slot:
+
+```html
+<GridPlan :config="{ showTooltip: true }" :placed-items="placedItems" :available-types="availableTypes">
+  <template #tooltip="{ item, coordinates, isSelected, view }">
+    <strong>{{ item.description }}</strong>
+    <div>{{ coordinates }} · {{ item.w }} × {{ item.h }}</div>
+    <div>Depth: {{ item.depth ?? 1 }}</div>
+    <small>{{ isSelected ? 'Selected' : 'Hovered' }} in {{ view }}</small>
+  </template>
+</GridPlan>
+```
+
+`item` is the full prepared element, including its ID, type information, icon,
+texture, and any custom properties you supplied. `coordinates` is the formatted
+coordinate range, `isSelected` indicates selection, and `view` is `"2d"` or `"3d"`.
+The TypeScript type `GridPlanTooltipSlotProps` is also exported.
+
+The playground's **Tooltip** section controls visibility and preferred placement.
+Enable **Custom tooltip slot** in its toolbar to try the slot example.
+
 ## Custom delete icon
 
 Use the `deleteIcon` slot to replace the cross inside the selected item's floating
@@ -410,7 +476,7 @@ The 3D blueprint supports the same `created`, `change`, `delete`, `select`, and
 
 - Click an empty floor cell to create an item using the active type.
 - Hover an empty floor cell to see its highlight and coordinates. `showCrosshair`
-  controls the row and column shading; the cell indicator also works in readonly mode.
+  controls the row and column shading. Cell highlights and hover coordinates are hidden in readonly mode.
 - Drag an item to move it. Movement snaps to grid cells.
 - Select an item and drag one of its four corner handles to resize its footprint.
 - Use the selected item's Depth field to change its vertical size, or Delete to remove it.

@@ -48,18 +48,44 @@ async function pointer(type, x, y, z) {
 }
 
 describe('3D editor interactions', () => {
+    test('renders the tooltip slot for a hovered item and falls back to the selected item', async () => {
+        const item = setup(true, { tooltip: ({ item, isSelected, coordinates, view }) => h('div', {
+            class: 'test-tooltip', 'data-selected': String(isSelected), 'data-view': view,
+        }, `${item.description} ${coordinates} ${item.metadata.serial}`) },
+        { description: 'Server', metadata: { serial: 'ABC' } })
+        expect(wrapper.find('.grid-plan-tooltip').exists()).toBe(false)
+        await wrapper.setProps({ config: { ...config, showBox: false, showTooltip: true,
+            tooltipBackgroundColor: '#123456', tooltipWidth: 220 }, activeEntity: {} })
+        await pointer('pointermove', 0, 1, 0)
+        expect(wrapper.find('.test-tooltip').text()).toBe('Server J-10, K-11 ABC')
+        expect(wrapper.find('.grid-plan-tooltip').element.style.backgroundColor).toBe('rgb(18, 52, 86)')
+        expect(wrapper.find('.grid-plan-tooltip').element.style.width).toBe('220px')
+        expect(wrapper.find('.test-tooltip').attributes()).toMatchObject({ 'data-selected': 'false', 'data-view': '3d' })
+        expect(wrapper.emitted('selectItem')).toBeUndefined()
+        await wrapper.find('canvas').trigger('pointerleave')
+        expect(wrapper.find('.grid-plan-tooltip').exists()).toBe(false)
+        await wrapper.setProps({ activeEntity: item })
+        expect(wrapper.find('.test-tooltip').attributes('data-selected')).toBe('true')
+        const scene = renderScene.mock.calls.at(-1)[0]
+        expect(scene.children.filter(child => child.element?.classList.contains('grid-plan-grid-3d-hover-info'))).toHaveLength(0)
+    })
     test.each([false, true])('highlights the hovered floor cell and coordinates (readonly: %s)', async readonly => {
         setup(readonly)
         const scene = renderScene.mock.calls.at(-1)[0]
         const cell = () => scene.children.find(child => child.name === 'grid-plan-grid-3d-cell-hover')
         await pointer('pointermove', -5.5, -0.01, 0.5)
+        if (readonly) {
+            expect(cell()).toBeUndefined()
+            expect(wrapper.emitted('hoverSquare')).toBeUndefined()
+            return
+        }
         expect(cell().userData.cell).toEqual({ x: 4, y: 10 })
         expect(cell().position.x).toBe(-5.5)
         expect(cell().position.z).toBe(0.5)
         const label = cell().children.find(child => child.isCSS2DObject)
         expect(label.element.textContent).toBe('E-11')
         expect(label.element.style.pointerEvents).toBe('none')
-        expect(cell().children.filter(child => child.isMesh)).toHaveLength(3)
+        expect(cell().children.filter(child => child.isMesh)).toHaveLength(readonly ? 1 : 3)
         const previous = cell()
         await pointer('pointermove', -5.5, -0.01, 0.5)
         expect(cell()).toBe(previous)

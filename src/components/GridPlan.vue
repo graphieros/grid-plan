@@ -187,6 +187,9 @@ defineExpose({
       @delete="deleteItem"
       @unselect="unselect"
     >
+      <template v-if="$slots.tooltip" #tooltip="slotProps">
+        <slot name="tooltip" v-bind="slotProps" />
+      </template>
       <template v-if="$slots.componentIcon" #componentIcon="slotProps">
         <slot name="componentIcon" v-bind="slotProps" />
       </template>
@@ -239,6 +242,9 @@ defineExpose({
       @unselect="unselect"
     >
 
+    <template v-if="$slots.tooltip" #tooltip="slotProps">
+      <slot name="tooltip" v-bind="slotProps" />
+    </template>
     <template v-if="$slots.deleteIcon" #deleteIcon="slotProps">
       <slot name="deleteIcon" v-bind="slotProps" />
     </template>
@@ -267,6 +273,9 @@ defineExpose({
   >
     <template v-if="$slots.componentIcon" #componentIcon="slotProps">
       <slot name="componentIcon" v-bind="slotProps" />
+    </template>
+    <template v-if="$slots.tooltip" #tooltip="slotProps">
+      <slot name="tooltip" v-bind="slotProps" />
     </template>
     <template v-if="$slots.deleteIcon" #deleteIcon="slotProps">
       <slot name="deleteIcon" v-bind="slotProps" />

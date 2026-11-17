@@ -9,6 +9,13 @@ declare module "grid-plan" {
     export type ItemStateGetter<T extends GridPlanItem = GridPlanItem> =
         ((item: Readonly<T>) => boolean) & (() => boolean);
 
+    export type GridPlanTooltipSlotProps<T extends GridPlanItem = GridPlanItem> = {
+        item: T;
+        isSelected: boolean;
+        coordinates: string;
+        view: "2d" | "3d";
+    };
+
     export type GridPlanExpose = {
         deleteItem(item: GridPlanItem): void
         focusItem(item: GridPlanItem): void
@@ -110,6 +117,17 @@ declare module "grid-plan" {
         showGrid2d?: boolean;
         showInventory?: boolean;
         tooltipColor?: string;
+        tooltipBackgroundColor?: string;
+        tooltipBorderRadius?: number | string;
+        tooltipLineHeight?: number | string;
+        tooltipPadding?: number | string;
+        tooltipBorder?: string;
+        tooltipBoxShadow?: string;
+        tooltipWidth?: number | string;
+        tooltipMaxWidth?: number | string;
+        tooltipMaxHeight?: number | string;
+        showTooltip?: boolean;
+        tooltipPosition?: "top" | "bottom" | "left" | "right";
         useAccordionMenu?: boolean;
         useGradient?: boolean;
         useShadow?: boolean;

@@ -6,6 +6,7 @@ export function usePlayground() {
   const config = ref({ ...defaultConfig });
   const readonly = ref(false);
   const showLabels = ref(false);
+  const showCustomTooltip = ref(false);
   const useIconLibrary = ref(false);
   const plan = ref(null);
   const activeType = ref(3);
@@ -61,6 +62,7 @@ export function usePlayground() {
     config.value = { ...defaultConfig };
     readonly.value = false;
     showLabels.value = false;
+    showCustomTooltip.value = false;
     useIconLibrary.value = false;
   }
   watch(useIconLibrary, () => {
@@ -69,7 +71,7 @@ export function usePlayground() {
     chooseType(types.value.find(type => type.typeId === activeType.value));
   });
 
-  return { config, readonly, showLabels, useIconLibrary, plan, activeType, selected, events, items, types,
+  return { config, readonly, showLabels, showCustomTooltip, useIconLibrary, plan, activeType, selected, events, items, types,
     changedCount, outsideCount, view, saveItem, removeItem, selectItem, unselect, chooseType, selectType,
     setView, resetItems, resetConfig };
 }

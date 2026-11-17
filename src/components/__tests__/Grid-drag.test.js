@@ -20,7 +20,7 @@ describe('2D active item rendering', () => {
         expect(shape()).toHaveLength(1)
         expect(wrapper.findAll('pattern')).toHaveLength(1)
         expect(wrapper.findAll('text[font-size="0.6"]').filter(text => text.text() === 'Server')).toHaveLength(1)
-        await shape()[0].trigger('mousedown')
+        await shape()[0].trigger('mousedown', { clientX: 3, clientY: 3 })
         await svg.trigger('mousemove', { clientX: 6, clientY: 6 })
         expect(shape()).toHaveLength(1)
         expect(shape()[0].attributes()).toMatchObject({ x: '5', y: '5' })
@@ -30,6 +30,28 @@ describe('2D active item rendering', () => {
         expect(label.attributes('x')).toBe('6')
         await svg.trigger('mouseup')
         expect(wrapper.emitted('change')?.[0][0]).toMatchObject({ x: 5, y: 5 })
+        wrapper.unmount()
+    })
+})
+
+describe('2D drag grab position', () => {
+    test.each([
+        [{ x: 2, y: 1, w: 12, h: 1 }, { x: 0, y: 0, w: 2, h: 1 }, [42, 30], [42, 10], { x: 2, y: 0 }],
+        [{ x: 1, y: 2, w: 1, h: 12 }, { x: 0, y: 0, w: 1, h: 2 }, [30, 42], [10, 42], { x: 0, y: 2 }],
+    ])('preserves the grab offset for a rectangular item %j', async (size, neighbor, start, end, expected) => {
+        const item = { id: 'moving', ...size }
+        const wrapper = mount(Grid, { props: {
+            items: [item, { id: 'neighbor', ...neighbor }], activeEntity: item, config: defaults,
+        } })
+        const svg = wrapper.find('svg')
+        svg.element.createSVGPoint = () => ({ x: 0, y: 0, matrixTransform() { return { x: this.x / 20, y: this.y / 20 } } })
+        svg.element.getScreenCTM = () => ({ inverse() { return {} } })
+        const active = wrapper.find('rect[style*="cursor: move"]')
+        await active.trigger('mousedown', { clientX: start[0], clientY: start[1] })
+        await svg.trigger('mousemove', { clientX: end[0], clientY: end[1] })
+        expect(item).toMatchObject({ ...expected, w: size.w, h: size.h })
+        await svg.trigger('mouseup')
+        expect(wrapper.emitted('change')?.[0][0]).toMatchObject(expected)
         wrapper.unmount()
     })
 })

@@ -33,5 +33,16 @@
   "boxThickness": 0.3,
   "boxHeight": 1,
   "boxColor": "#5A5A5A",
-  "showMenu": true
+  "showMenu": true,
+  "showTooltip": false,
+  "tooltipPosition": "top",
+  "tooltipBackgroundColor": "#202622f2",
+  "tooltipBorderRadius": 2,
+  "tooltipLineHeight": 1.5,
+  "tooltipPadding": "10px 14px",
+  "tooltipBorder": "1px solid #ffffff30",
+  "tooltipBoxShadow": "0 4px 16px #0003",
+  "tooltipWidth": 280,
+  "tooltipMaxWidth": 280,
+  "tooltipMaxHeight": 400
 }

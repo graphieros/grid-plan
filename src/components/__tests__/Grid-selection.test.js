@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { mount } from '@vue/test-utils'
 import GridPlan from '../GridPlan.vue'
+import defaults from '../../default_config.json'
 
 // Browser selection releases the pointer before dispatching click. A plain
 // mouseup must not emit change and cause GridPlan to replace the clicked SVG.
@@ -16,6 +17,12 @@ describe('2D selection', () => {
             },
         })
         await wrapper.vm.$nextTick()
+        const cell = wrapper.find('rect[x="0"][y="0"][width="1"][height="1"]')
+        await cell.trigger('mouseover')
+        expect(wrapper.findAll(`rect[fill="${defaults.crosshairBackground}"]`).length > 0).toBe(!readonly)
+        expect(wrapper.findAll('text').some(text => text.text() === 'A-1')).toBe(!readonly)
+        expect(wrapper.find('rect[fill="#FFFFFF20"]').exists()).toBe(!readonly)
+        await cell.trigger('mouseleave')
         const item = wrapper.find('rect[x="2"][y="2"][width="2"][height="2"]')
         const element = item.element
         await item.trigger('mouseenter')
@@ -41,6 +48,9 @@ describe('2D selection', () => {
         expect(Number(info[0].attributes('y'))).toBeCloseTo(5.2)
         expect(Number(info[1].attributes('y'))).toBeCloseTo(5.8)
         const active = wrapper.find('rect[x="2"][y="2"][width="2"][height="2"]')
+        const svg = wrapper.find('svg').element
+        svg.createSVGPoint = () => ({ x: 0, y: 0, matrixTransform() { return { x: this.x, y: this.y } } })
+        svg.getScreenCTM = () => ({ inverse() { return {} } })
         await active.trigger('mousedown', { clientX: 100, clientY: 100 })
         await active.trigger('mouseup', { clientX: 100, clientY: 100 })
         expect(wrapper.emitted('change')).toBeUndefined()

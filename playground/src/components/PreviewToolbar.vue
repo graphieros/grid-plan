@@ -2,6 +2,7 @@
 defineProps({ config: { type: Object, required: true }, itemCount: Number, view: String });
 const readonly = defineModel('readonly', { type: Boolean });
 const showLabels = defineModel('showLabels', { type: Boolean });
+const showCustomTooltip = defineModel('showCustomTooltip', { type: Boolean });
 const useIconLibrary = defineModel('useIconLibrary', { type: Boolean });
 const emit = defineEmits(['view', 'loadSample', 'clearItems']);
 </script>
@@ -23,6 +24,7 @@ const emit = defineEmits(['view', 'loadSample', 'clearItems']);
       <label><input v-model="readonly" type="checkbox" /> Read only</label>
       <label><input v-model="showLabels" type="checkbox" /> 2D text slot</label>
       <label><input id="use-icon-library" v-model="useIconLibrary" type="checkbox" /> Bootstrap Icons</label>
+      <label><input id="use-custom-tooltip" v-model="showCustomTooltip" type="checkbox" :disabled="!config.showTooltip" /> Custom tooltip slot</label>
       <div class="spacer"></div>
       <button class="button small" @click="emit('loadSample')">Load sample</button>
       <button class="button small" :disabled="readonly || !itemCount" @click="emit('clearItems')">Clear items</button>

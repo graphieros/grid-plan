@@ -10,6 +10,7 @@ const props = defineProps({
 });
 const readonly = defineModel('readonly', { type: Boolean });
 const showLabels = defineModel('showLabels', { type: Boolean });
+const showCustomTooltip = defineModel('showCustomTooltip', { type: Boolean });
 const useIconLibrary = defineModel('useIconLibrary', { type: Boolean });
 const emit = defineEmits(['view', 'loadSample', 'clearItems', 'chooseType', 'change', 'created', 'delete', 'select', 'unselect', 'selectType']);
 const plan = ref(null);
@@ -19,7 +20,7 @@ defineExpose({ setActiveType: type => plan.value?.setActiveType(type), unselect:
 <template>
   <section class="panel preview-panel" aria-label="Live preview">
     <PreviewToolbar :config="config" :item-count="items.length" :view="view"
-      v-model:readonly="readonly" v-model:show-labels="showLabels" v-model:use-icon-library="useIconLibrary"
+      v-model:readonly="readonly" v-model:show-labels="showLabels" v-model:show-custom-tooltip="showCustomTooltip" v-model:use-icon-library="useIconLibrary"
       @view="emit('view', $event)" @load-sample="emit('loadSample')" @clear-items="emit('clearItems')" />
     <TypePalette :types="types" :active-type="activeType" @select="emit('chooseType', $event)" />
     <p class="interaction-hint">
@@ -49,6 +50,9 @@ defineExpose({ setActiveType: type => plan.value?.setActiveType(type), unselect:
         @unselect="emit('unselect')"
         @select-type="emit('selectType', $event)"
       >
+        <template v-if="showCustomTooltip" #tooltip="scope">
+          <pre style="margin: 0; padding: 0; background: none; color: inherit; white-space: pre-wrap; overflow-wrap: anywhere; max-height: none; overflow: visible;">{{ JSON.stringify(scope, null, 2) }}</pre>
+        </template>
         <template #availableType="{ availableType }"
           ><span class="menu-type"
             ><span

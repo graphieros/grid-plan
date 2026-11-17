@@ -33,6 +33,7 @@ import {
     CSS2DObject,
 } from "three/examples/jsm/renderers/CSS2DRenderer";
 import { CSS3DRenderer, CSS3DObject } from "three/examples/jsm/renderers/CSS3DRenderer";
+import ItemTooltip from "./ItemTooltip.vue";
 import { convertColorToHex } from "../lib";
 import { canPlace, editFootprint } from "../lib/grid3d-edit";
 import { resolveGridIcon } from "../lib/grid-icon";
@@ -74,6 +75,25 @@ const canvas = ref(null);
 const deleteButton = shallowRef(null);
 const iconTargets = shallowRef([]);
 const slots = useSlots();
+const tooltipHoveredItem = shallowRef(null);
+const tooltipItem = computed(() => tooltipHoveredItem.value ?? (props.activeEntity?.w ? props.activeEntity : null));
+function tooltipAnchor() {
+    const item = tooltipItem.value;
+    if (!item || !camera || !canvas.value) return null;
+    camera.updateMatrixWorld();
+    const bounds = canvas.value.getBoundingClientRect();
+    const points = [];
+    for (const x of [item.x, item.x + item.w]) for (const y of [0, item.depth ?? 1]) for (const z of [item.y, item.y + item.h]) {
+        points.push(new Vector3(x - width.value / 2, y, z - height.value / 2).project(camera));
+    }
+    if (points.every(point => point.z < -1 || point.z > 1)) return null;
+    return {
+        left: bounds.left + (Math.min(...points.map(p => p.x)) + 1) * bounds.width / 2,
+        right: bounds.left + (Math.max(...points.map(p => p.x)) + 1) * bounds.width / 2,
+        top: bounds.top + (1 - Math.max(...points.map(p => p.y))) * bounds.height / 2,
+        bottom: bounds.top + (1 - Math.min(...points.map(p => p.y))) * bounds.height / 2,
+    };
+}
 let scene, camera, renderer, css2dRenderer, css3dRenderer, controls, raycaster, mouse;
 let frameId, resizeObserver;
 let drag = null;
@@ -484,7 +504,7 @@ const renderItems = () => {
                     selectionContent.appendChild(button);
                     deleteButton.value = button;
                 }
-                selectionContent.appendChild(labelDiv);
+                if (!props.config.showTooltip) selectionContent.appendChild(labelDiv);
             }
 
             const cube = new Mesh(geometry, material);
@@ -560,6 +580,7 @@ function planeCoordinates() {
 }
 
 function clearHoverInfo() {
+    tooltipHoveredItem.value = null;
     if (!hoverLabel) return;
     scene.remove(hoverLabel);
     disposeObject(hoverLabel);
@@ -598,7 +619,7 @@ function showGridHover(cell) {
         plane.position.set(x, elevation, z);
         hoverCell.add(plane);
     }
-    if (props.config.showCrosshair !== false) {
+    if (!props.readonly && props.config.showCrosshair !== false) {
         addPlane(width.value, 1, props.config.crosshairBackground, 0.35, width.value / 2 - cell.x - 0.5);
         addPlane(1, height.value, props.config.crosshairBackground, 0.35, 0, height.value / 2 - cell.y - 0.5);
     }
@@ -623,6 +644,11 @@ function showGridHover(cell) {
 }
 
 function showHoverInfo(item) {
+    if (props.config.showTooltip) {
+        clearHoverInfo();
+        tooltipHoveredItem.value = item ?? null;
+        return;
+    }
     if (!item || item.id === props.activeEntity?.id) {
         clearHoverInfo();
         return;
@@ -688,7 +714,7 @@ function onPointerMove(event) {
     const hovered = hit?.object.userData.w ? hit.object.userData : hit?.object.userData.item;
     showHoverInfo(gesture ? null : hovered);
     if (hovered) emit('hoverItem', hovered);
-    if (hit?.object.userData.isFloor && !gesture) {
+    if (hit?.object.userData.isFloor && !gesture && !props.readonly) {
         const cell = { x: Math.floor(hit.point.x + width.value / 2), y: Math.floor(hit.point.z + height.value / 2) };
         showGridHover(cell);
         if (hoverCell) emit('hoverSquare', cell);
@@ -839,6 +865,12 @@ watch(
             <button type="button" @click="emit('delete', activeEntity)">Delete</button>
             <button type="button" @click="emit('unselect')">Unselect</button>
         </div>
+        <ItemTooltip :config="config" v-if="config.showTooltip && tooltipItem" :item="tooltipItem" :container="container"
+            :get-anchor="tooltipAnchor" :coordinates="itemCoordinates(tooltipItem)" view="3d"
+            :is-selected="tooltipItem.id === activeEntity?.id" :preferred="config.tooltipPosition"
+            :color="config.tooltipColor" :font-family="config.fontFamily">
+            <template v-if="$slots.tooltip" #default="slotProps"><slot name="tooltip" v-bind="slotProps" /></template>
+        </ItemTooltip>
         <Teleport v-for="entry in iconTargets" :key="entry.item.id" :to="entry.target">
             <div :style="{
                 display: 'grid', placeItems: 'center', width: '32px', height: '32px',

@@ -136,7 +136,7 @@ summary {
     10px ui-monospace,
     monospace;
 }
-.color-control input {
+.color-control input[type="color"] {
   width: 28px;
   height: 27px;
   padding: 2px;
@@ -444,3 +444,5 @@ time {
 .grid-plan-grid {
   border-radius: 7px;
 }
+
+.color-control input[type="text"] { width: 80px; min-width: 0; padding: 5px; font-size: 10px; }

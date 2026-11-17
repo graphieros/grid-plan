@@ -24,7 +24,8 @@ function updateNumber(event) {
       <option v-for="option in choices[name]" :key="option" :value="option">{{ option }}</option>
     </select>
     <div v-else-if="isColor" class="color-control">
-      <input :id="`setting-${name}`" v-model.lazy="value" type="color" /><span>{{ value }}</span>
+      <input :id="`setting-${name}`" :value="String(value).slice(0, 7)" type="color" @change="value = $event.target.value" />
+      <input v-model.lazy="value" type="text" :aria-label="`${label(name)} CSS color`" />
     </div>
     <input v-else-if="numbers[name]" :id="`setting-${name}`" :value="value" type="number" v-bind="numbers[name]" @change="updateNumber" />
     <input v-else :id="`setting-${name}`" v-model.lazy="value" type="text" />

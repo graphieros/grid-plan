@@ -1,4 +1,5 @@
 export const groups = [
+  { title: 'Tooltip', hint: 'Boundary-aware item details on hover and selection.', keys: ['showTooltip', 'tooltipPosition', 'tooltipColor', 'tooltipBackgroundColor', 'tooltipBorderRadius', 'tooltipLineHeight', 'tooltipPadding', 'tooltipBorder', 'tooltipBoxShadow', 'tooltipWidth', 'tooltipMaxWidth', 'tooltipMaxHeight'] },
   {
     title: "Layout",
     hint: "Choose views and grid dimensions.",
@@ -21,7 +22,6 @@ export const groups = [
       "itemCoordinatesFontSizeRatio",
       "coordinatesBackground",
       "coordinatesColor",
-      "tooltipColor",
       "iconColor",
       "showIcons",
     ],
@@ -61,11 +61,17 @@ export const groups = [
   },
 ];
 export const choices = {
+  tooltipPosition: ["top", "bottom", "left", "right"],
   grid3dPosition: ["top", "bottom"],
   abscissaType: ["alphabetic", "numeric"],
   ordinatesType: ["alphabetic", "numeric"],
 };
 export const numbers = {
+  tooltipBorderRadius: { min: 0, max: 80, step: 1 },
+  tooltipLineHeight: { min: 0.5, max: 4, step: 0.1 },
+  tooltipWidth: { min: 40, max: 1200, step: 10 },
+  tooltipMaxWidth: { min: 40, max: 1200, step: 10 },
+  tooltipMaxHeight: { min: 40, max: 1200, step: 10 },
   itemNameFontSizeRatio: { min: 0.1, max: 2, step: 0.05 },
   itemCoordinatesFontSizeRatio: { min: 0.1, max: 2, step: 0.05 },
   gridWidth: { min: 4, max: 60, step: 1 },

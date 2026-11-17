@@ -7,7 +7,7 @@ import ConfigExport from './components/ConfigExport.vue';
 import { usePlayground } from './composables/usePlayground';
 
 const {
-  config, readonly, showLabels, useIconLibrary, plan, activeType, selected, events, items, types,
+  config, readonly, showLabels, showCustomTooltip, useIconLibrary, plan, activeType, selected, events, items, types,
   changedCount, outsideCount, view, saveItem, removeItem, selectItem, unselect, chooseType,
   selectType, setView, resetItems, resetConfig,
 } = usePlayground();
@@ -24,7 +24,7 @@ const {
       <main class="preview-column">
         <PlanPreview ref="plan" :config="config" :items="items" :types="types" :active-type="activeType"
           :view="view" :outside-count="outsideCount" v-model:readonly="readonly"
-          v-model:show-labels="showLabels" v-model:use-icon-library="useIconLibrary"
+          v-model:show-labels="showLabels" v-model:show-custom-tooltip="showCustomTooltip" v-model:use-icon-library="useIconLibrary"
           @view="setView" @load-sample="resetItems()" @clear-items="resetItems(true)" @choose-type="chooseType"
           @change="saveItem('change', $event)" @created="saveItem('created', $event)"
           @delete="removeItem" @select="selectItem" @unselect="unselect" @select-type="selectType" />
