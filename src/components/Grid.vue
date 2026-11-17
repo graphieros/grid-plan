@@ -557,7 +557,9 @@ function getItemFill(item: GridPlanPlacedItem) {
           :y="cell.y"
           :height="1"
           :width="1"
-          :fill="config.coordinatesBackground"
+          :fill="!readonly && config.showCrosshair !== false && !isDown && hoveredRect && (cell.x === hoveredRect.x || cell.y === hoveredRect.y)
+            ? config.crosshairBackground
+            : config.coordinatesBackground"
           :stroke="config.gridStroke"
           :stroke-width="config.gridStrokeWidth"
         />
@@ -565,7 +567,9 @@ function getItemFill(item: GridPlanPlacedItem) {
           :x="cell.textX"
           :y="cell.textY"
           :text-anchor="cell.anchor"
-          :fill="config.coordinatesColor"
+          :fill="!readonly && !isDown && hoveredRect && (cell.x === hoveredRect.x || cell.y === hoveredRect.y)
+            ? config.gridHighlightColor
+            : config.coordinatesColor"
           font-size="0.5"
           style="user-select: none"
         >
