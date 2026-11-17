@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useGridCoordinates } from "../composables/useGridCoordinates";
 import {
   computed,
   ref,
@@ -78,39 +79,18 @@ function convertElementsToIndividualWalls(element: GridPlanPlacedItem[]) {
   return walls;
 }
 
-function numberToLetters(num: number) {
-  let letters = "";
-  while (num > 0) {
-    let remainder = (num - 1) % 26;
-    letters = String.fromCharCode(65 + remainder) + letters;
-    num = Math.floor((num - 1) / 26);
-  }
-  return letters;
-}
+const { gridCoordinates, itemCoordinates } = useGridCoordinates(() => props.config);
 
-const gridCoordinates = computed(() => {
-  const abs = [];
-  const ord = [];
-
-  for (let i = 1; i <= props.config.gridWidth; i += 1) {
-    if (props.config.abscissaType === "alphabetic") {
-      abs.push(numberToLetters(i));
-    } else {
-      abs.push(i);
-    }
-  }
-  for (let i = 1; i <= props.config.gridHeight; i += 1) {
-    if (props.config.ordinatesType === "alphabetic") {
-      ord.push(numberToLetters(i));
-    } else {
-      ord.push(i);
-    }
-  }
-
-  return {
-    abs,
-    ord,
-  };
+// Keep all four borders in the same order and use one SVG cell template.
+const coordinateCells = computed(() => {
+  const { abs, ord } = gridCoordinates.value;
+  const { gridWidth, gridHeight } = props.config;
+  return [
+    ...abs.map((label, x) => ({ label, x, y: -1, textX: x + 0.5, textY: -0.3, anchor: 'middle' })),
+    ...abs.map((label, x) => ({ label, x, y: gridHeight, textX: x + 0.5, textY: gridHeight + 0.7, anchor: 'middle' })),
+    ...ord.map((label, y) => ({ label, x: -1, y, textX: -0.1, textY: y + 0.7, anchor: 'end' })),
+    ...ord.map((label, y) => ({ label, x: gridWidth, y, textX: gridWidth + 0.1, textY: y + 0.7, anchor: 'start' })),
+  ];
 });
 
 const walls = computed(() =>
@@ -333,12 +313,7 @@ function deleteEntity() {
   if (isPlacedItem(entity.value)) emit("delete", entity.value);
 }
 
-function itemCoordinates(item: GridPlanPlacedItem) {
-  if (item.h === 1 && item.w === 1) {
-    return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]}`;
-  }
-  return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]}, ${gridCoordinates.value.abs[item.x + item.w - 1]}-${gridCoordinates.value.ord[item.y + item.h - 1]}`;
-}
+
 
 const hoveredItem = ref<GridPlanPlacedItem | null>(null);
 const gridContainer = ref<HTMLElement | null>(null);
@@ -576,10 +551,10 @@ function getItemFill(item: GridPlanPlacedItem) {
       }"
     >
       <!-- GRID COORDINATES -->
-      <g v-for="(absCord, i) in gridCoordinates.abs">
+      <g v-for="cell in coordinateCells">
         <rect
-          :x="i"
-          :y="-1"
+          :x="cell.x"
+          :y="cell.y"
           :height="1"
           :width="1"
           :fill="config.coordinatesBackground"
@@ -587,77 +562,14 @@ function getItemFill(item: GridPlanPlacedItem) {
           :stroke-width="config.gridStrokeWidth"
         />
         <text
-          :x="i + 0.5"
-          :y="-0.3"
-          text-anchor="middle"
+          :x="cell.textX"
+          :y="cell.textY"
+          :text-anchor="cell.anchor"
           :fill="config.coordinatesColor"
           font-size="0.5"
           style="user-select: none"
         >
-          {{ absCord }}
-        </text>
-      </g>
-      <g v-for="(absCord, i) in gridCoordinates.abs">
-        <rect
-          :x="i"
-          :y="config.gridHeight"
-          :height="1"
-          :width="1"
-          :fill="config.coordinatesBackground"
-          :stroke="config.gridStroke"
-          :stroke-width="config.gridStrokeWidth"
-        />
-        <text
-          :x="i + 0.5"
-          :y="config.gridHeight + 0.7"
-          text-anchor="middle"
-          :fill="config.coordinatesColor"
-          font-size="0.5"
-          style="user-select: none"
-        >
-          {{ absCord }}
-        </text>
-      </g>
-      <g v-for="(ordCord, i) in gridCoordinates.ord">
-        <rect
-          :x="-1"
-          :y="i"
-          :height="1"
-          :width="1"
-          :fill="config.coordinatesBackground"
-          :stroke="config.gridStroke"
-          :stroke-width="config.gridStrokeWidth"
-        />
-        <text
-          :x="-0.1"
-          :y="i + 0.7"
-          text-anchor="end"
-          :fill="config.coordinatesColor"
-          font-size="0.5"
-          style="user-select: none"
-        >
-          {{ ordCord }}
-        </text>
-      </g>
-      <g v-for="(ordCord, i) in gridCoordinates.ord">
-        <rect
-          :x="config.gridWidth"
-          :y="i"
-          :height="1"
-          :width="1"
-          :fill="config.coordinatesBackground"
-          :stroke="config.gridStroke"
-          :stroke-width="config.gridStrokeWidth"
-        />
-        <text
-          :x="config.gridWidth + 0.1"
-          :y="i + 0.7"
-          text-anchor="start"
-          :fill="config.coordinatesColor"
-          font-size="0.5"
-          style="user-select: none"
-        >
-          {{ ordCord }}
+          {{ cell.label }}
         </text>
       </g>
 

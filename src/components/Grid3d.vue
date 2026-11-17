@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useGridCoordinates } from "../composables/useGridCoordinates";
 import { useSlots, ref, shallowRef, watch, onMounted, onBeforeUnmount, computed } from "vue";
 import {
     Plane,
@@ -111,52 +112,9 @@ let gridHelper: LineSegments | null = null;
 let hoverLabel: CSS2DObject | null = null;
 let hoverCell: Group | null = null;
 
-function numberToLetters(num: number) {
-    let letters = "";
-    while (num > 0) {
-        let remainder = (num - 1) % 26;
-        letters = String.fromCharCode(65 + remainder) + letters;
-        num = Math.floor((num - 1) / 26);
-    }
-    return letters;
-}
+const { gridCoordinates, itemCoordinates } = useGridCoordinates(() => props.config);
 
-const gridCoordinates = computed(() => {
-    const abs = [];
-    const ord = [];
 
-    for (let i = 1; i <= props.config.gridWidth; i += 1) {
-        if (props.config.abscissaType === "alphabetic") {
-            abs.push(numberToLetters(i));
-        } else {
-            abs.push(i);
-        }
-    }
-    for (let i = 1; i <= props.config.gridHeight; i += 1) {
-        if (props.config.ordinatesType === "alphabetic") {
-            ord.push(numberToLetters(i));
-        } else {
-            ord.push(i);
-        }
-    }
-
-    return {
-        abs,
-        ord,
-    };
-});
-
-function itemCoordinates(item: GridPlanPlacedItem) {
-    if (!item) return "";
-    if (item.h === 1 && item.w === 1) {
-        return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]
-            }`;
-    }
-    return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]
-        }, ${gridCoordinates.value.abs[item.x + item.w - 1]
-        }-${gridCoordinates.value.ord[item.y + item.h - 1]
-        }`;
-}
 
 function createRectGrid(w: number, h: number, color: ColorRepresentation) {
     const vertices = [];

@@ -1,12 +1,11 @@
 import type { GridPlanIcon } from '../types';
-import { icons } from '../icons';
-import { parseSVG } from './index';
+import { iconPaths } from '../icons';
 
 export function resolveGridIcon(icon: unknown) {
     if (!icon) return null;
     let definition: Exclude<GridPlanIcon, string | string[]>;
-    if (typeof icon === 'string' && Object.hasOwn(icons, icon)) {
-        definition = { paths: parseSVG(icons[icon as keyof typeof icons]).map(path => path.d) };
+    if (typeof icon === 'string' && Object.hasOwn(iconPaths, icon)) {
+        definition = { paths: iconPaths[icon as keyof typeof iconPaths] };
     } else if (typeof icon === 'string' || Array.isArray(icon)) {
         definition = { paths: icon };
     } else if (typeof icon === 'object') {
