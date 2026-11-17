@@ -20,6 +20,6 @@ export default defineConfig({
     },
     sourcemap: true,
     emptyOutDir: true,
-    minify: "esbuild",
+    minify: "oxc",
   },
 });
