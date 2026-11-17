@@ -11,14 +11,20 @@ export default defineConfig({
       formats: ["es"],
       fileName: () => "grid-plan.js",
     },
-    rollupOptions: {
-      external: [
-        "vue",
-        /^three(\/.+)?$/,
-      ],
-      output: {},
+    rolldownOptions: {
+      external: ["vue", /^three(\/.+)?$/],
+      output: {
+        minify: {
+          compress: true,
+          mangle: true,
+          codegen: true,
+        },
+        comments: {
+          annotation: true,
+          legal: true,
+        },
+      },
     },
-    sourcemap: true,
     emptyOutDir: true,
     minify: "oxc",
   },
