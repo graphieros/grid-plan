@@ -1,4 +1,9 @@
-export const baseTypes = [
+import type {
+  GridPlanItemType,
+  GridPlanPlacedItem,
+  GridPlanResolvedConfig,
+} from "grid-plan";
+export const baseTypes: GridPlanItemType[] = [
   {
     typeId: 1,
     description: "Door",
@@ -79,13 +84,22 @@ export const baseTypes = [
   },
 ];
 
-export const libraryIcons = {
-  1: 'bi-door-open', 2: 'bi-bricks', 3: 'bi-hdd-rack', 4: 'bi-lightning-charge',
-  5: 'bi-display', 6: 'bi-router', 7: 'bi-database', 8: 'bi-telephone',
-  9: 'bi-snow', 10: 'bi-cpu',
+export const libraryIcons: Record<string, string> = {
+  1: "bi-door-open",
+  2: "bi-bricks",
+  3: "bi-hdd-rack",
+  4: "bi-lightning-charge",
+  5: "bi-display",
+  6: "bi-router",
+  7: "bi-database",
+  8: "bi-telephone",
+  9: "bi-snow",
+  10: "bi-cpu",
 };
 
-export function createSampleItems(config) {
+export function createSampleItems(
+  config: Pick<GridPlanResolvedConfig, "gridWidth" | "gridHeight">,
+): GridPlanPlacedItem[] {
   const w = config.gridWidth;
   const h = config.gridHeight;
   return [

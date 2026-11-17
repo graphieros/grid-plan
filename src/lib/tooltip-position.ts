@@ -1,6 +1,10 @@
+import type { GridPlanTooltipPosition } from '../config';
+export interface TooltipAnchor { left: number; top: number; right: number; bottom: number }
+export interface TooltipSize { width: number; height: number }
+export interface TooltipLayout { left: number; top: number; side: GridPlanTooltipPosition; maxWidth: number; maxHeight: number }
 // All coordinates are relative to the owning map. Prefer an unchanged,
 // centered tooltip; if none fits, constrain its size on the roomiest side.
-export function positionTooltip(anchor, boundary, size, preferred = 'top', gap = 10, padding = 8) {
+export function positionTooltip(anchor: TooltipAnchor, boundary: TooltipSize, size: TooltipSize, preferred: GridPlanTooltipPosition = 'top', gap = 10, padding = 8) {
   const cx = (anchor.left + anchor.right) / 2;
   const cy = (anchor.top + anchor.bottom) / 2;
   const horizontal = Math.max(0, 2 * Math.min(cx - padding, boundary.width - padding - cx));
@@ -11,12 +15,12 @@ export function positionTooltip(anchor, boundary, size, preferred = 'top', gap =
     left: { width: Math.max(0, anchor.left - gap - padding), height: vertical },
     right: { width: Math.max(0, boundary.width - padding - anchor.right - gap), height: vertical },
   };
-  const opposite = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
+  const opposite: Record<GridPlanTooltipPosition, GridPlanTooltipPosition> = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
   const first = opposite[preferred] ? preferred : 'top';
-  const order = [...new Set([first, opposite[first], 'top', 'bottom', 'right', 'left'])];
+  const order = [...new Set<GridPlanTooltipPosition>([first, opposite[first], 'top', 'bottom', 'right', 'left'])];
   let side = order.find(side => size.width <= rooms[side].width && size.height <= rooms[side].height);
   if (!side) side = order.reduce((best, side) => {
-    const area = room => Math.min(size.width, room.width) * Math.min(size.height, room.height);
+    const area = (room: TooltipSize) => Math.min(size.width, room.width) * Math.min(size.height, room.height);
     return area(rooms[side]) > area(rooms[best]) ? side : best;
   }, first);
   const room = rooms[side];

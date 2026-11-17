@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Grid from '../Grid.vue'
-import defaults from '../../default_config.json'
+import originalDefaults from '../../default_config'
+const defaults = { ...originalDefaults, showTooltip: false }
 
 describe('2D resizing across opposite edges', () => {
     test.each([

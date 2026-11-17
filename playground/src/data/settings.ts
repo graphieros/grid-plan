@@ -1,9 +1,28 @@
-export const groups = [
-  { title: 'Tooltip', hint: 'Boundary-aware item details on hover and selection.', keys: ['showTooltip', 'tooltipPosition', 'tooltipColor', 'tooltipBackgroundColor', 'tooltipBorderRadius', 'tooltipLineHeight', 'tooltipPadding', 'tooltipBorder', 'tooltipBoxShadow', 'tooltipWidth', 'tooltipMaxWidth', 'tooltipMaxHeight'] },
+import type { ConfigKey, SettingsGroup, NumericConstraint } from "../types";
+export const groups: SettingsGroup[] = [
+  {
+    title: "Tooltip",
+    hint: "Boundary-aware item details on hover and selection.",
+    keys: [
+      "showTooltip",
+      "tooltipPosition",
+      "tooltipColor",
+      "tooltipBackgroundColor",
+      "tooltipBorderRadius",
+      "tooltipLineHeight",
+      "tooltipPadding",
+      "tooltipBorder",
+      "tooltipBoxShadow",
+      "tooltipWidth",
+      "tooltipMaxWidth",
+      "tooltipMaxHeight",
+    ],
+  },
   {
     title: "Layout",
     hint: "Choose views and grid dimensions.",
     keys: [
+      "theme",
       "showGrid2d",
       "showGrid3d",
       "grid3dPosition",
@@ -20,6 +39,8 @@ export const groups = [
       "fontFamily",
       "itemNameFontSizeRatio",
       "itemCoordinatesFontSizeRatio",
+      "itemNameOffsetY",
+      "itemCoordinatesOffsetY",
       "coordinatesBackground",
       "coordinatesColor",
       "iconColor",
@@ -60,13 +81,14 @@ export const groups = [
     ],
   },
 ];
-export const choices = {
+export const choices: Partial<Record<ConfigKey, readonly string[]>> = {
+  theme: ["dark", "light"],
   tooltipPosition: ["top", "bottom", "left", "right"],
   grid3dPosition: ["top", "bottom"],
   abscissaType: ["alphabetic", "numeric"],
   ordinatesType: ["alphabetic", "numeric"],
 };
-export const numbers = {
+export const numbers: Partial<Record<ConfigKey, NumericConstraint>> = {
   tooltipBorderRadius: { min: 0, max: 80, step: 1 },
   tooltipLineHeight: { min: 0.5, max: 4, step: 0.1 },
   tooltipWidth: { min: 40, max: 1200, step: 10 },
@@ -74,6 +96,8 @@ export const numbers = {
   tooltipMaxHeight: { min: 40, max: 1200, step: 10 },
   itemNameFontSizeRatio: { min: 0.1, max: 2, step: 0.05 },
   itemCoordinatesFontSizeRatio: { min: 0.1, max: 2, step: 0.05 },
+  itemNameOffsetY: { min: -10, max: 10, step: 0.1 },
+  itemCoordinatesOffsetY: { min: -10, max: 10, step: 0.1 },
   gridWidth: { min: 4, max: 60, step: 1 },
   gridHeight: { min: 4, max: 60, step: 1 },
   gridStrokeWidth: { min: 0, max: 1, step: 0.01 },
@@ -83,7 +107,7 @@ export const numbers = {
   boxThickness: { min: 0.05, max: 3, step: 0.05 },
 };
 
-export function label(key) {
+export function label(key: string) {
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (c) => c.toUpperCase())

@@ -289,6 +289,8 @@ function unselected() {
 | fontFamily            | string                    | "Arial"      | Font used for all elements in the component                         |
 | itemNameFontSizeRatio      | number                    | 0.4          | 2D hovered and selected item name font size, in grid units            |
 | itemCoordinatesFontSizeRatio | number                  | 0.4          | 2D hovered and selected item coordinates font size, in grid units     |
+| itemNameOffsetY | number | 0 | 2D hovered and selected name Y offset in grid units; positive moves down |
+| itemCoordinatesOffsetY | number | 0 | 2D hovered and selected coordinates Y offset in grid units; positive moves down |
 | grid3dPosition        | "top" OR "bottom"         | "top"        | Display 3d blueprint on top or below                                |
 | gridFill              | string                    | "#3A3A3A"    | Background color of unused blueprint cells                          |
 | gridHeight            | number                    | 20           | The height of the blueprint in cell units                           |
@@ -310,7 +312,7 @@ function unselected() {
 | showTooltip           | boolean                   | false        | Show item tooltips in both views                                    |
 | tooltipPosition       | "top", "bottom", "left", "right" | "top" | Preferred item tooltip placement; flips automatically                |
 | useAccordionMenu      | boolean                   | true         | Display the menu inside a details HTML element                      |
-| useGradient           | boolean                   | true         | Shows components with a subtle gradient                             |
+| useGradient           | boolean                   | true         | Shows 2D components with a subtle gradient                             |
 | useShadow             | boolean                   | true         | Show selected item with a drop shadow                               |
 | showBox               | boolean                   | true         | Show a 'wall' around the grid                                       |
 | boxThickness          | number                    | 0.3          | Box thickness, defaults to 1/3 of a grid cell                       |
@@ -416,7 +418,7 @@ config: {
   tooltipPadding: '10px 14px',
   tooltipBorder: '1px solid #ffffff30',
   tooltipBoxShadow: '0 4px 16px #0003',
-  tooltipWidth: 280,
+  tooltipWidth: "fit-content",
   tooltipMaxWidth: 280,
   tooltipMaxHeight: 400,
 }
@@ -452,8 +454,10 @@ Enable **Custom tooltip slot** in its toolbar to try the slot example.
 
 ## Custom delete icon
 
-Use the `deleteIcon` slot to replace the cross inside the selected item's floating
-delete button in both 2D and 3D. It receives `{ item }`, the selected item. The
+Use the `deleteIcon` slot to replace the trash icon inside the selected item's floating
+square delete button in both 2D and 3D. It sits outside the item, preferring
+the right side and switching to the left, bottom, or top to fit near map edges.
+It receives `{ item }`, the selected item. The
 button keeps its delete action, accessible label, and readonly behavior.
 
 ```html
@@ -467,7 +471,7 @@ button keeps its delete action, accessible label, and readonly behavior.
 ```
 
 You can also render an icon component in this slot. Size it to fill its container
-with `width: 100%; height: 100%`. Omitting the slot preserves the default cross.
+with `width: 100%; height: 100%`. Omitting the slot preserves the default trash icon.
 
 ## Editing in 3D
 
@@ -484,8 +488,9 @@ The 3D blueprint supports the same `created`, `change`, `delete`, `select`, and
 - Drag empty space to orbit the camera; use the mouse wheel to zoom.
 
 Moving and resizing respect grid boundaries and prevent overlaps. The `readonly`
-prop disables creation, movement, resizing, depth changes, and deletion while
-keeping selection and camera navigation available.
+prop disables selection, creation, movement, resizing, depth changes, and deletion.
+Hover information and camera navigation remain available. Switching to readonly
+clears the current selection.
 
 To display only the 3D blueprint, install the optional `three` peer dependency and use:
 
@@ -680,3 +685,63 @@ its configuration controls:
 import { GridPlan, defaultConfig } from 'grid-plan';
 const config = { ...defaultConfig };
 ```
+
+## TypeScript
+
+The package includes generated declarations at `dist/types/index.d.ts`. No
+ambient `declare module` file or separate types package is needed. Props, emits,
+slots, and exposed component methods are typed, and the Vue 3.3 peer range is
+preserved.
+
+```ts
+import { GridPlan, defaultConfig } from 'grid-plan';
+import type { GridPlanConfig, GridPlanItem, GridPlanItemType, GridPlanTooltipSlotProps } from 'grid-plan';
+
+const config: GridPlanConfig = { ...defaultConfig, showTooltip: true };
+// In a Vue script setup:
+// const plan = ref<InstanceType<typeof GridPlan> | null>(null);
+```
+
+All Vue components and library/playground modules are TypeScript. Shared API
+models live in `src/types.ts`; configuration keys derive from the runtime defaults
+in `src/default_config.ts`. `pnpm build` compiles the runtime and generates all
+declarations with `vue-tsc`. The dev command watches both outputs.
+
+Run `pnpm typecheck`, `pnpm typecheck:playground`, and `pnpm test:types` to verify
+the source and published API. The consumer check copies only published files into
+an isolated application and checks TypeScript, Vue templates, slots, event payloads,
+and exposed methods against Vue 3.3 and the development Vue version.
+
+
+Keyboard navigation is available in both grid views. Tab to the grid, then use
+Right/Down to focus the next item or Left/Up to focus the previous item, wrapping
+through the current item order. Enter selects the focused item; Escape clears
+focus and selection. In readonly mode, only arrow navigation is enabled.
+Focused items show their information, including the `tooltip` slot when
+`showTooltip` is enabled. Leaving the grid clears keyboard focus.
+
+
+The tooltip exposes `data-position="top|bottom|left|right"` for custom CSS.
+It reflects the actual placement after boundary adjustments, so styles follow
+any automatic flip. For example:
+
+```css
+.grid-plan-tooltip[data-position="bottom"] {
+  border-top: 2px solid currentColor;
+}
+```
+
+
+The `theme` config option accepts `"dark"` (default, preserving the original
+palette) or `"light"`. Both the 2D and 3D views update when it changes.
+Explicit configuration values override theme defaults; item type colors stay
+under your control.
+
+```vue
+<GridPlan :config="{ theme: 'light', gridHighlightColor: '#0d9488' }" />
+```
+
+Pass only the settings you want to override. Spreading `defaultConfig` into a
+light config also explicitly overrides its palette with the dark defaults.
+For a complete configuration with the chosen theme applied, use
+`resolveConfig({ theme: 'light' })`, exported by `grid-plan`.

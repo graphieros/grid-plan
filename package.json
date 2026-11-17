@@ -29,35 +29,44 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/types/grid-plan.d.ts",
+      "types": "./dist/types/index.d.ts",
       "import": "./dist/grid-plan.js",
       "default": "./dist/grid-plan.js"
     }
   },
   "module": "./dist/grid-plan.js",
-  "types": "./dist/types/grid-plan.d.ts",
+  "types": "./dist/types/index.d.ts",
   "scripts": {
     "clean": "node cleanup.cjs",
     "dev": "pnpm --dir playground run dev",
-    "build": "pnpm run clean && vite build --mode production && node copy-types.cjs",
+    "build": "pnpm run clean && vite build --mode production && pnpm run build:types",
     "preview": "pnpm --dir playground run preview",
     "test": "vitest",
     "test:e2e": "pnpm --dir playground run test:e2e",
     "test:e2e:dev": "pnpm --dir playground run test:e2e:dev",
     "build:playground": "pnpm --dir playground run build",
-    "test:playground": "pnpm --dir playground run test"
+    "test:playground": "pnpm --dir playground run test",
+    "build:types": "vue-tsc -p tsconfig.build.json",
+    "typecheck": "vue-tsc --noEmit",
+    "typecheck:playground": "pnpm --dir playground run typecheck",
+    "build:types:watch": "vue-tsc -p tsconfig.build.json --watch",
+    "test:types": "pnpm run build && node scripts/typecheck-package.mjs"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.1",
-    "@vue/test-utils": "^2.4.6",
-    "jsdom": "^24.1.0",
-    "three": "^0.173.0",
-    "vite": "^7.1.9",
-    "vitest": "^3.0.5",
-    "vue": "^3.5.22"
+    "@types/three": "0.187.0",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vue/test-utils": "^2.6.0",
+    "jsdom": "^31.0.1",
+    "three": "^0.187.0",
+    "typescript": "5.9.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0",
+    "vue": "^3.5.45",
+    "vue-tsc": "3.3.14",
+    "vue-types-min": "npm:@vue/runtime-dom@3.3.0"
   },
   "peerDependencies": {
-    "three": "^0.173.0",
+    "three": "^0.187.0",
     "vue": "^3.3.0"
   },
   "peerDependenciesMeta": {

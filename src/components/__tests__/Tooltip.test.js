@@ -58,9 +58,10 @@ describe('optional item tooltip', () => {
     await wrapper.setProps({ config: { tooltipWidth: 400, tooltipMaxWidth: 420 } });
     expect(wrapper.element.style.left).toBe('100px');
     expect(wrapper.attributes('data-side')).toBe('top');
+    expect(wrapper.attributes('data-position')).toBe('top');
     wrapper.unmount();
   });
-  test('forwards the full item to a custom slot on hover and selection, including readonly mode', async () => {
+  test('forwards the full item on readonly hover and allows selection only when editable', async () => {
     const render = ({ item, isSelected, coordinates, view }) => h('div', {
       class: 'custom-tooltip', 'data-selected': String(isSelected), 'data-view': view,
     }, `${item.description} ${coordinates} ${item.metadata.serial}`);
@@ -86,6 +87,11 @@ describe('optional item tooltip', () => {
     expect(wrapper.find('.grid-plan-tooltip').exists()).toBe(false);
     wrapper.vm.selectItem(wrapper.vm.getItems()[0]);
     await wrapper.vm.$nextTick();
+    expect(wrapper.find('.custom-tooltip').exists()).toBe(false);
+    expect(wrapper.vm.getActiveItem()).toEqual({});
+    await wrapper.setProps({ readonly: false });
+    wrapper.vm.selectItem(wrapper.vm.getItems()[0]);
+    await wrapper.vm.$nextTick();
     expect(wrapper.find('.custom-tooltip').attributes('data-selected')).toBe('true');
     await wrapper.setProps({ config: { ...wrapper.props('config'), showTooltip: false } });
     expect(wrapper.find('.grid-plan-tooltip').exists()).toBe(false);
@@ -104,11 +110,13 @@ describe('optional item tooltip', () => {
     Object.defineProperty(wrapper.element, 'offsetHeight', { value: 50 });
     await wrapper.setProps({ preferred: 'bottom' });
     expect(wrapper.attributes('data-side')).toBe('bottom');
+    expect(wrapper.attributes('data-position')).toBe('bottom');
     expect(wrapper.element.style.left).toBe('150px');
     expect(wrapper.element.style.top).toBe('60px');
     expect(wrapper.attributes('role')).toBe('tooltip');
     await wrapper.setProps({ getAnchor: () => ({ left: 250, right: 350, top: 290, bottom: 330 }), preferred: 'bottom' });
     expect(wrapper.attributes('data-side')).toBe('top');
+    expect(wrapper.attributes('data-position')).toBe('top');
     expect(wrapper.element.style.top).toBe('180px');
     wrapper.unmount();
     expect(cancelAnimationFrame).toHaveBeenCalled();

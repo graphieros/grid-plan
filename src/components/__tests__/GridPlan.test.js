@@ -50,3 +50,33 @@ describe('optional 3D layout', () => {
         wrapper.unmount()
     })
 })
+
+
+test('config and type updates preserve live items and selection', async () => {
+    const wrapper = mount(GridPlan, {
+        props: { availableTypes: [{ typeId: 1, description: 'Server', color: '#cccccc' }],
+            placedItems: [{ id: 'a', typeId: 1, x: 1, y: 1, w: 1, h: 1 }], config: { showGrid3d: false } },
+        global: { stubs: { Grid: true } },
+    })
+    await flushPromises()
+    const grid = wrapper.findComponent({ name: 'Grid' })
+    const originalGrid = grid.vm
+    const item = wrapper.vm.getItems()[0]
+    wrapper.vm.selectItem(item)
+    item.x = 4
+    grid.vm.$emit('triggerAction', { x: 8, y: 8 })
+    await wrapper.setProps({ config: { showGrid3d: false, handleFill: '#123456' } })
+    expect(wrapper.findComponent({ name: 'Grid' }).vm).toBe(originalGrid)
+    expect(wrapper.vm.getItems()).toHaveLength(2)
+    expect(wrapper.vm.getItems()[0].x).toBe(4)
+    const selectedId = wrapper.vm.getActiveItem().id
+    await wrapper.setProps({ availableTypes: [{ typeId: 1, description: 'Updated', color: '#abcdef' }] })
+    expect(wrapper.vm.getItems()).toHaveLength(2)
+    expect(wrapper.vm.getItems()[0]).toMatchObject({ x: 4, description: 'Updated', color: '#abcdef' })
+    expect(wrapper.vm.getActiveItem()).toBe(wrapper.vm.getItems().find(item => item.id === selectedId))
+    grid.vm.$emit('triggerAction', { x: 10, y: 10 })
+    expect(wrapper.vm.getItems().at(-1).color).toBe('#abcdef')
+    await wrapper.setProps({ placedItems: [] })
+    expect(wrapper.vm.getActiveItem()).toEqual({})
+    wrapper.unmount()
+})

@@ -1,93 +1,54 @@
-<script setup>
+<script setup lang="ts">
 import {
   computed,
   ref,
-  onMounted,
-  onUnmounted,
-  useSlots,
   watchPostEffect,
+  watch,
 } from "vue";
+import type {
+  GridViewProps,
+  GridViewEvents,
+  GridViewSlots,
+  GridPlanPlacedItem,
+  GridPlanSelection,
+  GridPlanPoint,
+  GridPlanResizeHandle,
+  GridPlanPointerEvent,
+} from "../types";
+import { isPlacedItem } from "../types";
+import { useItemKeyboard } from "../composables/useItemKeyboard";
 import ItemTooltip from "./ItemTooltip.vue";
 import { resolveGridIcon } from "../lib/grid-icon";
+import { positionDeleteButton } from "../lib/delete-button-position";
 import { editFootprint } from "../lib/grid3d-edit";
 
-const props = defineProps({
-  /**
-   * Already placed elements on the grid (walls, other entities...)
-   * @example
-   * [
-   *  { x: 1, y: 1, w: 2, h: 3, color: "#FF0000" },
-   *  { x: 1, y: 4, w: 2, h: 3, color: "#FF0000" },
-   * ]
-   */
-  items: {
-    type: Array,
-    default() {
-      return [];
-    },
-  },
-  /**
-   * The active entity that can be moved and resized on available space
-   * If none provided, the item will be positioned on the first available square
-   * @example
-   * { x: 1, y: 1, w: 1, h: 1, "#FF0000" }
-   */
-  activeEntity: {
-    type: Object,
-    default() {
-      return {};
-    },
-  },
-  config: {
-    type: Object,
-    default() {
-      return {};
-    },
-  },
-  readonly: {
-    type: Boolean,
-    default: false,
-  },
+const props = withDefaults(defineProps<GridViewProps>(), {
+  items: () => [],
+  activeEntity: () => ({}),
+  readonly: false,
 });
+const slots = defineSlots<GridViewSlots>();
 
-const slots = useSlots();
+const emit = defineEmits<GridViewEvents>();
 
-const emit = defineEmits([
-  "change",
-  "selectItem",
-  "triggerAction",
-  "delete",
-  "unselect",
-]);
-
-function selectItem(item) {
+function selectItem(item: GridPlanPlacedItem) {
+  if (props.readonly) return;
   emit("selectItem", item);
 }
 
-function triggerAction(rect) {
+function triggerAction(rect: GridPlanPoint) {
   if (props.readonly) return;
   emit("triggerAction", rect);
 }
 
 function unselect() {
+  if (props.readonly) return;
   emit("unselect");
 }
 
-function unselectOnKeypress(e) {
-  if (e.key === "Escape") {
-    unselect();
-  }
-}
-
-onMounted(() => {
-  document.addEventListener("keydown", unselectOnKeypress);
-});
-
-onUnmounted(() => document.removeEventListener("keydown", unselectOnKeypress));
-
-const width = ref(props.config.gridWidth);
-const height = ref(props.config.gridHeight);
-const SVG = ref(null);
+const width = computed(() => props.config.gridWidth);
+const height = computed(() => props.config.gridHeight);
+const SVG = ref<SVGSVGElement | null>(null);
 
 const gridRects = computed(() => {
   const rects = [];
@@ -102,8 +63,8 @@ const gridRects = computed(() => {
   return rects;
 });
 
-function convertElementsToIndividualWalls(element) {
-  const walls = [];
+function convertElementsToIndividualWalls(element: GridPlanPlacedItem[]) {
+  const walls: GridPlanPoint[] = [];
   element.forEach((coordinates) => {
     for (let i = 0; i < coordinates.h; i += 1) {
       for (let j = 0; j < coordinates.w; j += 1) {
@@ -117,7 +78,7 @@ function convertElementsToIndividualWalls(element) {
   return walls;
 }
 
-function numberToLetters(num) {
+function numberToLetters(num: number) {
   let letters = "";
   while (num > 0) {
     let remainder = (num - 1) % 26;
@@ -152,13 +113,18 @@ const gridCoordinates = computed(() => {
   };
 });
 
-const walls = ref(
+const walls = computed(() =>
   convertElementsToIndividualWalls(
     props.items.filter((el) => el.id !== props.activeEntity.id),
   ),
 );
 
-const entity = ref(props.activeEntity || {});
+const entity = computed<GridPlanSelection>(() => props.readonly ? {} : props.activeEntity);
+const { focusedItem, clearKeyboardFocus, onKeyDown } = useItemKeyboard({
+  items: () => props.items, selected: () => entity.value, readonly: () => props.readonly,
+  select: selectItem, unselect,
+});
+
 
 const inactiveItems = computed(() =>
   props.items.filter(
@@ -174,19 +140,28 @@ const displayedItems = computed(() =>
 );
 
 const isDown = ref(false);
-const resizingHandle = ref(null);
+
+const resizingHandle = ref<GridPlanResizeHandle | null>(null);
+
 const initialDimensions = ref({ x: 0, y: 0, w: 0, h: 0 });
-let startPoint = null;
-let startGridPoint = null;
+let startPoint: GridPlanPoint | null = null;
+let startGridPoint: GridPlanPoint | null = null;
+let editingItem: GridPlanPlacedItem | null = null;
 let hasDragged = false;
 let suppressClick = false;
 
-function startMove(event) {
-  if (props.readonly) return;
-  const pointer = event.touches?.[0] ?? event;
+function startMove(event: GridPlanPointerEvent) {
+  if (props.readonly || !isPlacedItem(entity.value) || !SVG.value) return;
+  const pointer = "touches" in event ? event.touches[0] : event;
   startPoint = { x: pointer.clientX, y: pointer.clientY };
   startGridPoint = getSVGCoords(event, SVG.value);
-  initialDimensions.value = { ...entity.value };
+  editingItem = entity.value;
+  initialDimensions.value = {
+    x: entity.value.x,
+    y: entity.value.y,
+    w: entity.value.w,
+    h: entity.value.h,
+  };
   hasDragged = false;
   suppressClick = false;
   isDown.value = true;
@@ -197,18 +172,18 @@ function clickActive() {
   suppressClick = false;
 }
 
-function getSVGCoords(evt, svg) {
+function getSVGCoords(evt: GridPlanPointerEvent, svg: SVGSVGElement) {
   const pt = svg.createSVGPoint();
-  if (evt.touches && evt.touches.length) {
+  if ("touches" in evt && evt.touches.length) {
     pt.x = evt.touches[0].clientX;
     pt.y = evt.touches[0].clientY;
   } else {
-    pt.x = evt.clientX;
-    pt.y = evt.clientY;
+    pt.x = (evt as MouseEvent).clientX;
+    pt.y = (evt as MouseEvent).clientY;
   }
 
   const svgMatrix = svg.getScreenCTM();
-  const transformedPt = pt.matrixTransform(svgMatrix.inverse());
+  const transformedPt = pt.matrixTransform(svgMatrix!.inverse());
 
   return {
     x: transformedPt.x,
@@ -216,14 +191,14 @@ function getSVGCoords(evt, svg) {
   };
 }
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function move(e) {
-  if (!isDown.value || props.readonly) return;
+function move(e: GridPlanPointerEvent) {
+  if (!isDown.value || props.readonly || !isPlacedItem(entity.value)) return;
 
-  const pointer = e.touches?.[0] ?? e;
+  const pointer = "touches" in e ? e.touches[0] : e;
   if (
     startPoint &&
     Math.hypot(pointer.clientX - startPoint.x, pointer.clientY - startPoint.y) >
@@ -234,7 +209,8 @@ function move(e) {
 
   e.preventDefault();
 
-  const coordinates = getSVGCoords(e, SVG.value);
+  const coordinates = getSVGCoords(e, SVG.value!);
+
   const rounded = {
     x: Math.round(coordinates.x),
     y: Math.round(coordinates.y),
@@ -244,13 +220,13 @@ function move(e) {
     resizeEntity(rounded);
   } else {
     const newX = clamp(
-      Math.round(initialDimensions.value.x + coordinates.x - startGridPoint.x),
+      Math.round(initialDimensions.value.x + coordinates.x - startGridPoint!.x),
       0,
       width.value - entity.value.w,
     );
 
     const newY = clamp(
-      Math.round(initialDimensions.value.y + coordinates.y - startGridPoint.y),
+      Math.round(initialDimensions.value.y + coordinates.y - startGridPoint!.y),
       0,
       height.value - entity.value.h,
     );
@@ -262,7 +238,7 @@ function move(e) {
   }
 }
 
-function isColliding(x, y, w, h) {
+function isColliding(x: number, y: number, w: number, h: number) {
   for (let i = 0; i < w; i += 1) {
     for (let j = 0; j < h; j += 1) {
       if (walls.value.some((wall) => wall.x === x + i && wall.y === y + j)) {
@@ -273,18 +249,19 @@ function isColliding(x, y, w, h) {
   return false;
 }
 
-function isOverflowing(x, y, w, h) {
+function isOverflowing(x: number, y: number, w: number, h: number) {
   return x + w > width.value || y + h > height.value || x < 0 || y < 0;
 }
 
 function drop() {
-  if (!isDown.value || props.readonly) return;
+  if (!isDown.value || props.readonly || !isPlacedItem(entity.value)) return;
   isDown.value = false;
   resizingHandle.value = null;
   suppressClick = hasDragged;
   startPoint = null;
+  editingItem = null;
   if (
-    ["x", "y", "w", "h"].some(
+    (["x", "y", "w", "h"] as const).some(
       (key) => entity.value[key] !== initialDimensions.value[key],
     )
   ) {
@@ -292,16 +269,43 @@ function drop() {
   }
 }
 
-function startResize(handle) {
-  if (props.readonly) return;
+function cancelEditing() {
+  if (!isDown.value) return;
+  if (editingItem) Object.assign(editingItem, initialDimensions.value);
+  isDown.value = false;
+  resizingHandle.value = null;
+  startPoint = null;
+  startGridPoint = null;
+  editingItem = null;
+  suppressClick = false;
+}
+watch(
+  () => [
+    props.activeEntity,
+    props.readonly,
+    props.config.gridWidth,
+    props.config.gridHeight,
+  ],
+  cancelEditing,
+);
+
+function startResize(handle: GridPlanResizeHandle) {
+  if (props.readonly || !isPlacedItem(entity.value)) return;
   startPoint = null;
   hasDragged = true;
   isDown.value = true;
   resizingHandle.value = handle;
-  initialDimensions.value = { ...entity.value };
+  editingItem = entity.value;
+  initialDimensions.value = {
+    x: entity.value.x,
+    y: entity.value.y,
+    w: entity.value.w,
+    h: entity.value.h,
+  };
 }
 
-function resizeEntity(coordinates) {
+function resizeEntity(coordinates: GridPlanPoint) {
+  if (!isPlacedItem(entity.value)) return;
   const next = editFootprint(
     initialDimensions.value,
     coordinates,
@@ -316,23 +320,56 @@ function resizeEntity(coordinates) {
   }
 }
 
+const deleteButtonFocused = ref(false);
+watch(() => entity.value.id, () => { deleteButtonFocused.value = false; });
+const deleteButtonPosition = computed(() => {
+  const item = entity.value;
+  if (!isPlacedItem(item)) return null;
+  return positionDeleteButton({ left: item.x, top: item.y, right: item.x + item.w, bottom: item.y + item.h },
+    { width: width.value, height: height.value }, 0.65, props.config.handleSize / 2 + 0.12);
+});
+
 function deleteEntity() {
-  emit("delete", entity.value);
+  if (isPlacedItem(entity.value)) emit("delete", entity.value);
 }
 
-function itemCoordinates(item) {
+function itemCoordinates(item: GridPlanPlacedItem) {
   if (item.h === 1 && item.w === 1) {
     return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]}`;
   }
   return `${gridCoordinates.value.abs[item.x]}-${gridCoordinates.value.ord[item.y]}, ${gridCoordinates.value.abs[item.x + item.w - 1]}-${gridCoordinates.value.ord[item.y + item.h - 1]}`;
 }
 
-const hoveredItem = ref(null);
-const gridContainer = ref(null);
+const hoveredItem = ref<GridPlanPlacedItem | null>(null);
+const gridContainer = ref<HTMLElement | null>(null);
+
+const hoveredEntity = computed(() => {
+  const id = hoveredItem.value?.id;
+  if (id === undefined) return null;
+  if (entity.value.id === id && isPlacedItem(entity.value)) return entity.value;
+  return props.items.find((item) => item.id === id) ?? null;
+});
+
+const hoverCornerPaths = computed(() => {
+  const item = hoveredEntity.value;
+  if (!item || item.id === entity.value.id || isDown.value) return [];
+  const gap = 0.12;
+  const length = 0.25;
+  const left = item.x - gap;
+  const right = item.x + item.w + gap;
+  const top = item.y - gap;
+  const bottom = item.y + item.h + gap;
+  return [
+    `M ${left} ${top + length} V ${top} H ${left + length}`,
+    `M ${right - length} ${top} H ${right} V ${top + length}`,
+    `M ${left} ${bottom - length} V ${bottom} H ${left + length}`,
+    `M ${right - length} ${bottom} H ${right} V ${bottom - length}`,
+  ];
+});
 
 const tooltipItem = computed(
   () =>
-    hoveredItem.value ?? (entity.value.x !== undefined ? entity.value : null),
+    focusedItem.value ?? hoveredEntity.value ?? (entity.value.x !== undefined ? entity.value : null),
 );
 
 function tooltipAnchor() {
@@ -355,20 +392,30 @@ function tooltipAnchor() {
     bottom: Math.max(...points.map((p) => p.y)),
   };
 }
+
 const itemNameFontSizeRatio = computed(
   () => props.config.itemNameFontSizeRatio ?? 0.4,
 );
+
 const itemCoordinatesFontSizeRatio = computed(
   () => props.config.itemCoordinatesFontSizeRatio ?? 0.4,
 );
+
 const infoItems = computed(() => {
-  if (props.config.showTooltip) return [];
+  if (props.config.showTooltip) {
+    return [];
+  }
+
   const result = entity.value.x !== undefined ? [entity.value] : [];
+
   if (
-    hoveredItem.value &&
-    !result.some((item) => item.id === hoveredItem.value.id)
-  )
-    result.push(hoveredItem.value);
+    hoveredEntity.value &&
+    !result.some((item) => item.id === hoveredEntity.value?.id)
+  ) {
+    result.push(hoveredEntity.value);
+  }
+
+  if (focusedItem.value && !result.some(item => item.id === focusedItem.value?.id)) result.push(focusedItem.value);
   return result;
 });
 
@@ -424,17 +471,18 @@ const viewport = computed(() => {
     labelWidth.value / 2 + 0.25,
     (props.config.handleSize ?? 0.3) / 2 + 0.25,
   );
-  const top = Math.max(2, (props.config.handleSize ?? 0.3) / 2 + 0.25);
+  const top = Math.max(2, (props.config.handleSize ?? 0.3) / 2 + 0.25)
+    + Math.max(0, -props.config.itemNameOffsetY, -props.config.itemCoordinatesOffsetY);
   const bottom = Math.max(
     2,
     1.8 +
       itemNameFontSizeRatio.value +
       itemCoordinatesFontSizeRatio.value * 1.3,
-  );
+  ) + Math.max(0, props.config.itemNameOffsetY, props.config.itemCoordinatesOffsetY);
   return `${-horizontal} ${-top} ${width.value + horizontal * 2} ${height.value + top + bottom}`;
 });
 
-function itemInfoTop(item) {
+function itemInfoTop(item: GridPlanPlacedItem) {
   const top = item.y + item.h + 0.5;
   const end =
     top +
@@ -444,7 +492,7 @@ function itemInfoTop(item) {
   return end < height.value ? top : Math.max(top, height.value + 1.3);
 }
 
-const hoveredRect = ref(null);
+const hoveredRect = ref<GridPlanPoint | null>(null);
 
 const highlightedCoordinates = computed(() => {
   if (!hoveredRect.value) return "";
@@ -482,11 +530,11 @@ const decoratedItems = computed(() =>
   })),
 );
 
-function getTexturePatternId(item) {
+function getTexturePatternId(item: GridPlanPlacedItem) {
   return `grid-plan-texture-${item.id ?? `${item.x}-${item.y}-${item.w}-${item.h}`}`;
 }
 
-function getItemFill(item) {
+function getItemFill(item: GridPlanPlacedItem) {
   if (item.texture?.src) {
     return `url(#${getTexturePatternId(item)})`;
   }
@@ -497,6 +545,12 @@ function getItemFill(item) {
 
 <template>
   <div
+    tabindex="0"
+    aria-label="2D grid editor"
+    @keydown="onKeyDown"
+    @blur="clearKeyboardFocus"
+    @pointerdown="clearKeyboardFocus"
+    @pointermove="clearKeyboardFocus"
     :style="{
       width: '100%',
       maxWidth: '100%',
@@ -639,7 +693,7 @@ function getItemFill(item) {
         :width="1"
         :stroke="config.gridHighlightColor"
         :stroke-width="config.gridStrokeWidth * 2"
-        :fill="'#FFFFFF20'"
+        :fill="config.theme === 'light' ? '#2563EB20' : '#FFFFFF20'"
       />
 
       <!-- WALLS -->
@@ -667,7 +721,7 @@ function getItemFill(item) {
         "
         @mouseleave="hoveredItem = null"
         @click="selectItem(placedItem)"
-        :style="`opacity:${activeEntity.id !== undefined ? (activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity) : '1'}`"
+        :style="`opacity:${entity.id !== undefined ? (entity.id === placedItem.id ? '1' : config.nonSelectedOpacity) : '1'}`"
       />
 
       <defs>
@@ -712,7 +766,7 @@ function getItemFill(item) {
 
       <!-- ACTIVE ENTITY -->
       <rect
-        v-if="activeEntity && activeEntity.x !== undefined"
+        v-if="entity.x !== undefined"
         :x="entity.x"
         :y="entity.y"
         :width="entity.w"
@@ -731,11 +785,7 @@ function getItemFill(item) {
         :style="`cursor: ${readonly ? 'default' : 'move'}; ${config.useShadow ? '-webkit-filter: drop-shadow(0px 1px 0.5px rgba(0, 0, 0, 0.6)); filter: drop-shadow(0px 0px 0.5px rgba(0, 0, 0, 0.6))' : ''}`"
       />
 
-      <g
-        v-if="
-          config.useGradient && activeEntity && activeEntity.x !== undefined
-        "
-      >
+      <g v-if="config.useGradient && entity.x !== undefined">
         <rect
           :x="entity.x + 0.2"
           :y="entity.y + 0.2"
@@ -755,7 +805,7 @@ function getItemFill(item) {
           :font-size="0.6"
           :fill="placedItem.iconColor || config.iconColor"
           text-anchor="middle"
-          :style="`opacity:${activeEntity.id !== undefined ? (activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity) : '1'}; pointer-events: none; user-select: none`"
+          :style="`opacity:${entity.id !== undefined ? (entity.id === placedItem.id ? '1' : config.nonSelectedOpacity) : '1'}; pointer-events: none; user-select: none`"
         >
           <slot
             name="componentText"
@@ -777,7 +827,7 @@ function getItemFill(item) {
           viewBox="0 0 32 32"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
-          :style="`opacity:${activeEntity.id !== undefined ? (activeEntity.id === placedItem.id ? '1' : config.nonSelectedOpacity) : '1'}; pointer-events: none; user-select: none`"
+          :style="`opacity:${entity.id !== undefined ? (entity.id === placedItem.id ? '1' : config.nonSelectedOpacity) : '1'}; pointer-events: none; user-select: none`"
         >
           <foreignObject x="0" y="0" width="32" height="32">
             <div
@@ -815,7 +865,7 @@ function getItemFill(item) {
           :style="{
             color: placedItem.iconColor || config.iconColor,
             opacity:
-              activeEntity.id !== undefined && activeEntity.id !== placedItem.id
+              entity.id !== undefined && entity.id !== placedItem.id
                 ? config.nonSelectedOpacity
                 : 1,
             pointerEvents: 'none',
@@ -834,12 +884,23 @@ function getItemFill(item) {
         </svg>
       </g>
 
+      <g v-if="hoverCornerPaths.length" class="grid-plan-hover-corners"
+        fill="none" :stroke="config.handleFill" stroke-width="0.06"
+        stroke-linecap="square" style="pointer-events: none" aria-hidden="true">
+        <g :stroke="config.gridFill" stroke-width="0.1">
+          <path v-for="(path, index) in hoverCornerPaths" :key="index" :d="path" />
+        </g>
+        <path v-for="(path, index) in hoverCornerPaths" :key="index" :d="path" />
+      </g>
+
       <!-- HANDLES -->
-      <g v-if="activeEntity && activeEntity.x !== undefined && !readonly">
+      <g v-if="entity.x !== undefined && !readonly">
         <rect
           :x="entity.x - config.handleSize / 2"
           :y="entity.y - config.handleSize / 2"
-          fill="white"
+          :fill="config.handleFill"
+          :stroke="config.gridFill"
+          :stroke-width="config.handleSize / 10"
           :height="config.handleSize"
           :width="config.handleSize"
           @mousedown.prevent="startResize('top-left')"
@@ -849,7 +910,9 @@ function getItemFill(item) {
         <rect
           :x="entity.x + entity.w - config.handleSize / 2"
           :y="entity.y - config.handleSize / 2"
-          fill="white"
+          :fill="config.handleFill"
+          :stroke="config.gridFill"
+          :stroke-width="config.handleSize / 10"
           :height="config.handleSize"
           :width="config.handleSize"
           @mousedown.prevent="startResize('top-right')"
@@ -859,7 +922,9 @@ function getItemFill(item) {
         <rect
           :x="entity.x - config.handleSize / 2"
           :y="entity.y + entity.h - config.handleSize / 2"
-          fill="white"
+          :fill="config.handleFill"
+          :stroke="config.gridFill"
+          :stroke-width="config.handleSize / 10"
           :height="config.handleSize"
           :width="config.handleSize"
           @mousedown.prevent="startResize('bottom-left')"
@@ -869,7 +934,9 @@ function getItemFill(item) {
         <rect
           :x="entity.x + entity.w - config.handleSize / 2"
           :y="entity.y + entity.h - config.handleSize / 2"
-          fill="white"
+          :fill="config.handleFill"
+          :stroke="config.gridFill"
+          :stroke-width="config.handleSize / 10"
           :height="config.handleSize"
           :width="config.handleSize"
           @mousedown.prevent="startResize('bottom-right')"
@@ -879,62 +946,33 @@ function getItemFill(item) {
       </g>
 
       <!-- BUTTONS -->
-      <g v-if="!readonly && activeEntity && activeEntity.x !== undefined">
-        <circle
-          :cx="entity.x + entity.w / 2"
-          :cy="entity.y - 1"
-          :r="0.5"
-          :fill="'#CCCCCC66'"
-          @click="deleteEntity"
-          style="cursor: pointer"
-        />
-        <foreignObject
-          v-if="slots.deleteIcon"
-          :x="entity.x + entity.w / 2 - 0.3"
-          :y="entity.y - 1.3"
-          width="0.6"
-          height="0.6"
-          style="pointer-events: none; overflow: hidden"
-        >
-          <div
-            style="
-              display: grid;
-              place-items: center;
-              width: 100%;
-              height: 100%;
-              color: white;
-            "
-          >
+      <g v-if="!readonly && entity.x !== undefined && deleteButtonPosition" class="grid-plan-delete-control"
+        :data-position="deleteButtonPosition.side"
+        :transform="`translate(${deleteButtonPosition.x} ${deleteButtonPosition.y})`">
+        <rect class="grid-plan-delete-button" x="0" y="0" width="0.65" height="0.65"
+          :fill="config.theme === 'light' ? '#475569CC' : '#CCCCCC66'"
+          :stroke="config.handleFill" :stroke-width="deleteButtonFocused ? 0.07 : 0.025"
+          @focus="deleteButtonFocused = true" @blur="deleteButtonFocused = false"
+          role="button" tabindex="0" @keydown.enter.stop.prevent="deleteEntity"
+          @keydown.space.stop.prevent="deleteEntity" :aria-label="`Delete ${entity.description ?? 'item'}`"
+          @mousedown.stop.prevent
+          @click.stop="deleteEntity" style="cursor: pointer; outline: none; outline-width: 0" />
+        <foreignObject v-if="slots.deleteIcon" x="0.13" y="0.13" width="0.39" height="0.39"
+          style="pointer-events: none; overflow: hidden">
+          <div style="display: grid; place-items: center; width: 100%; height: 100%; color: white">
             <slot name="deleteIcon" :item="entity" />
           </div>
         </foreignObject>
-        <template v-else>
-          <line
-            :x1="entity.x + entity.w / 2 - 0.25"
-            :x2="entity.x + entity.w / 2 + 0.25"
-            :y1="entity.y - 0.75"
-            :y2="entity.y - 1.25"
-            :stroke="'white'"
-            :stroke-width="0.09"
-            stroke-linecap="round"
-            style="pointer-events: none"
-          />
-          <line
-            :x2="entity.x + entity.w / 2 - 0.25"
-            :x1="entity.x + entity.w / 2 + 0.25"
-            :y1="entity.y - 0.75"
-            :y2="entity.y - 1.25"
-            :stroke="'white'"
-            :stroke-width="0.09"
-            stroke-linecap="round"
-            style="pointer-events: none"
-          />
-        </template>
+        <svg v-else x="0.13" y="0.13" width="0.39" height="0.39" viewBox="0 0 24 24"
+          aria-hidden="true" focusable="false" style="pointer-events: none">
+          <path d="M3 6H21 M9 6V3H15V6 M5 6L6 21H18L19 6 M10 10V17 M14 10V17" stroke="white" stroke-width="2" fill="none"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
       </g>
 
       <!-- TOOLTIPS -->
       <text
-        v-if="!readonly && hoveredRect && !isDown"
+        v-if="!readonly && hoveredRect && !isDown && highlightedTooltipPosition"
         :text-anchor="highlightedTooltipPosition.textAnchor"
         :x="highlightedTooltipPosition.x"
         :y="highlightedTooltipPosition.y"
@@ -945,6 +983,11 @@ function getItemFill(item) {
         {{ highlightedCoordinates }}
       </text>
 
+      <rect v-if="focusedItem" class="grid-plan-keyboard-focus"
+        :x="focusedItem.x" :y="focusedItem.y" :width="focusedItem.w" :height="focusedItem.h"
+        fill="none" :stroke="config.gridHighlightColor" :stroke-width="config.gridStrokeWidth * 2 + 0.04"
+        stroke-dasharray="0.15 0.1" style="pointer-events: none" />
+
       <g
         v-for="infoItem in infoItems"
         :key="infoItem.id"
@@ -953,10 +996,10 @@ function getItemFill(item) {
       >
         <text
           :x="infoItem.x + infoItem.w - infoItem.w / 2"
-          :y="itemInfoTop(infoItem) + itemNameFontSizeRatio"
+          :y="itemInfoTop(infoItem) + itemNameFontSizeRatio + config.itemNameOffsetY"
           :font-size="itemNameFontSizeRatio"
           :fill="config.tooltipColor"
-          :stroke="'black'"
+          :stroke="config.theme === 'light' ? 'transparent' : 'black'"
           :stroke-width="0.011"
           style="pointer-events: none; user-select: none"
           text-anchor="middle"
@@ -969,12 +1012,13 @@ function getItemFill(item) {
             itemInfoTop(infoItem) +
             0.3 +
             itemNameFontSizeRatio +
-            itemCoordinatesFontSizeRatio
+            itemCoordinatesFontSizeRatio +
+            config.itemCoordinatesOffsetY
           "
           :font-size="itemCoordinatesFontSizeRatio"
           :fill="config.tooltipColor"
           style="pointer-events: none; user-select: none"
-          :stroke="'black'"
+          :stroke="config.theme === 'light' ? 'transparent' : 'black'"
           :stroke-width="0.011"
           text-anchor="middle"
         >
@@ -1001,3 +1045,4 @@ function getItemFill(item) {
     </ItemTooltip>
   </div>
 </template>
+

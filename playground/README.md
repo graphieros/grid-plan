@@ -16,12 +16,15 @@ pnpm run dev
 ```
 
 `dev` builds the library and declarations first, then watches library source and
-rebuilds `dist` alongside the playground's Vite server. The preview updates from
+rebuilds JavaScript and generated declarations in `dist` alongside the playground's Vite server. The preview updates from
 those built files. Vue and Three.js are deduplicated so the linked package and
 application share their runtime instances.
 
 ```sh
-pnpm run build                 # Library only
+pnpm run build                 # Library JavaScript and declarations
+pnpm run typecheck             # Strict library type checking
+pnpm run typecheck:playground  # Playground checked against dist types
+pnpm run test:types            # Isolated consumer checks (Vue 3.3 and 3.5)
 pnpm run build:playground      # Library, then playground/dist
 pnpm test --run                # Library tests
 pnpm run test:playground       # Rebuild library, then playground tests
@@ -36,7 +39,7 @@ binary installed to run the end-to-end tests.
 ## Structure
 
 - `src/App.vue`: page composition and event wiring.
-- `src/composables/usePlayground.js`: demo state, item synchronization, presets,
+- `src/composables/usePlayground.ts`: demo state, item synchronization, presets,
   selection, and bounded event history.
 - `src/data/`: sample item definitions and configuration-control metadata.
 - `src/components/ConfigPanel.vue` and `ConfigControl.vue`: searchable settings
@@ -50,3 +53,8 @@ binary installed to run the end-to-end tests.
 
 Bootstrap Icons, its fonts, and all app assets belong to this package. The
 published library remains independent of the playground's dependencies.
+
+The app entry and supporting modules use TypeScript. Its build runs `vue-tsc`
+before Vite, and consumes only the library's generated declarations from
+`dist/types/index.d.ts`. Workspace-level TypeScript tooling is declared in the
+root package.

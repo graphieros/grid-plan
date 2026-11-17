@@ -1,12 +1,12 @@
 import { defineConfig } from "vite";
-import { resolve } from "path";
+import { fileURLToPath } from "node:url";
 import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   plugins: [vue()],
   build: {
     lib: {
-      entry: resolve(__dirname, "src/index.js"),
+      entry: fileURLToPath(new URL("./src/index.ts", import.meta.url)),
       name: "GridPlan",
       formats: ["es"],
       fileName: () => "grid-plan.js",

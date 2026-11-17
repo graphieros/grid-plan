@@ -11,7 +11,7 @@ describe('item icons', () => {
         const item = { id: 'font-icon', typeId: 1, x: 2, y: 3, w: 1, h: 1 }
         const wrapper = mount(GridPlan, {
             props: {
-                config: { showGrid3d: false },
+                config: { showTooltip: false, showGrid3d: false },
                 availableTypes: [{ typeId: 1, description: 'Font icon' }], placedItems: [item],
             },
             slots: { componentIcon: ({ maxSize }) => h('i', { 'data-size': maxSize, style: { fontSize: `${maxSize * 0.7}px` } }) },
@@ -43,7 +43,7 @@ describe('item icons', () => {
     ])('renders availableTypes icon %j before and after selection', async (icon, viewBox, fill) => {
         const wrapper = mount(GridPlan, {
             props: {
-                config: { showGrid3d: false, showMenu: false, showInventory: false },
+                config: { showTooltip: false, showGrid3d: false, showMenu: false, showInventory: false },
                 availableTypes: [{ typeId: 1, description: 'Custom', icon, iconColor: '#ff0000' }],
                 placedItems: [{ id: 'custom', typeId: 1, x: 2, y: 3, w: 2, h: 2 }],
             },

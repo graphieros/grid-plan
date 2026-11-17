@@ -1,14 +1,16 @@
 import { describe, expect, test } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { reactive } from 'vue'
 import Grid from '../Grid.vue'
-import defaults from '../../default_config.json'
+import originalDefaults from '../../default_config'
+const defaults = { ...originalDefaults, showTooltip: false }
 
 describe('2D active item rendering', () => {
     test('renders only the moving item and its decorations, without the old placement', async () => {
         const item = { id: 'server', typeId: 1, x: 2, y: 2, w: 2, h: 2,
             description: 'Server', texture: { src: '/texture.png' } }
         // A selected item can be a separate object from its placed-item snapshot.
-        const active = { ...item }
+        const active = reactive({ ...item })
         const wrapper = mount(Grid, {
             props: { items: [item], activeEntity: active, config: { ...defaults } },
             slots: { componentText: '{{ params.placedItem.description }}' },
@@ -52,6 +54,25 @@ describe('2D drag grab position', () => {
         expect(item).toMatchObject({ ...expected, w: size.w, h: size.h })
         await svg.trigger('mouseup')
         expect(wrapper.emitted('change')?.[0][0]).toMatchObject(expected)
+        wrapper.unmount()
+    })
+})
+
+
+describe('reactive 2D props', () => {
+    test('refreshes handles, selection and dimensions without remounting', async () => {
+        const first = { id: 'a', typeId: 1, x: 1, y: 1, w: 2, h: 2 }
+        const wrapper = mount(Grid, { props: { items: [first], activeEntity: first, config: { ...defaults } } })
+        const vm = wrapper.vm
+        const second = { id: 'b', typeId: 1, x: 5, y: 6, w: 1, h: 1 }
+        await wrapper.setProps({ items: [second], activeEntity: second,
+            config: { ...defaults, handleFill: '#123456', handleSize: 0.7, gridWidth: 30, gridHeight: 25 } })
+        expect(wrapper.vm).toBe(vm)
+        const handles = wrapper.findAll('rect[fill="#123456"]')
+        expect(handles).toHaveLength(4)
+        expect(handles[0].attributes('width')).toBe('0.7')
+        expect(wrapper.find('rect[style*="cursor: move"]').attributes()).toMatchObject({ x: '5', y: '6' })
+        expect(wrapper.findAll(`rect[fill="${defaults.gridFill}"]`)).toHaveLength(30 * 25)
         wrapper.unmount()
     })
 })

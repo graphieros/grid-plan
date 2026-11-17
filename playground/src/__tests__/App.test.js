@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import App from '../App.vue'
+import { defaultConfig } from 'grid-plan'
 
 vi.mock('grid-plan', async importOriginal => ({
     ...await importOriginal(),
@@ -14,22 +15,35 @@ vi.mock('grid-plan', async importOriginal => ({
 }))
 
 describe('configuration playground', () => {
+    test('switches theme defaults live and preserves custom colors', async () => {
+        const wrapper = mount(App)
+        const grid = wrapper.findComponent({ name: 'DemoGrid' })
+        await wrapper.find('input[aria-label="Grid Stroke CSS color"]').setValue('#123456')
+        await wrapper.find('#setting-theme').setValue('light')
+        expect(grid.props('config')).toMatchObject({ theme: 'light', gridFill: '#F8FAFC',
+            tooltipColor: '#1E293B', gridStroke: '#123456' })
+        await wrapper.find('#setting-theme').setValue('dark')
+        expect(grid.props('config')).toMatchObject({ theme: 'dark', gridFill: defaultConfig.gridFill,
+            tooltipColor: defaultConfig.tooltipColor, gridStroke: '#123456' })
+        wrapper.unmount()
+    })
+
     test('enables the optional tooltip and custom content example, then resets both', async () => {
         const wrapper = mount(App)
         const grid = wrapper.findComponent({ name: 'DemoGrid' })
-        expect(wrapper.find('#use-custom-tooltip').attributes('disabled')).toBeDefined()
+        expect(wrapper.find('#use-custom-tooltip').attributes('disabled') !== undefined).toBe(!defaultConfig.showTooltip)
         expect(grid.vm.$slots.tooltip).toBeUndefined()
         await wrapper.find('#setting-showTooltip').setValue(true)
         await wrapper.find('#setting-tooltipPosition').setValue('right')
-        await wrapper.find('#setting-tooltipWidth').setValue('360')
+        await wrapper.find('#setting-tooltipWidth').setValue('360px')
         await wrapper.find('#setting-tooltipPadding').setValue('12px 20px')
         await wrapper.find('input[aria-label="Tooltip Background Color CSS color"]').setValue('#11223380')
         await wrapper.find('#use-custom-tooltip').setValue(true)
         expect(grid.props('config')).toMatchObject({ showTooltip: true, tooltipPosition: 'right' })
-        expect(grid.props('config')).toMatchObject({ tooltipWidth: 360, tooltipPadding: '12px 20px', tooltipBackgroundColor: '#11223380' })
+        expect(grid.props('config')).toMatchObject({ tooltipWidth: '360px', tooltipPadding: '12px 20px', tooltipBackgroundColor: '#11223380' })
         expect(grid.vm.$slots.tooltip).toBeDefined()
         await wrapper.find('.page-header button').trigger('click')
-        expect(grid.props('config').showTooltip).toBe(false)
+        expect(grid.props('config').showTooltip).toBe(defaultConfig.showTooltip)
         expect(grid.vm.$slots.tooltip).toBeUndefined()
         wrapper.unmount()
     })
@@ -75,7 +89,7 @@ describe('configuration playground', () => {
         await wrapper.find('.preview-tools input').setValue(true)
         expect(grid.props('readonly')).toBe(true)
         await wrapper.find('.page-header button').trigger('click')
-        expect(grid.props('config')).toMatchObject({ showGrid2d: true, showGrid3d: true })
+        expect(grid.props('config')).toEqual(defaultConfig)
         expect(grid.props('readonly')).toBe(false)
         wrapper.unmount()
     })

@@ -1,35 +1,16 @@
-<script setup >
+<script setup lang="ts">
 import { ref, computed, defineAsyncComponent, onMounted, toRefs, watch } from "vue"
 import Grid from "./Grid.vue";
-import { createUid, useNestedProp } from "../lib";
-import defaultConfig from "../default_config.json"
+import { createUid } from "../lib";
+import { resolveConfig } from "../config";
+import type { GridPlanProps, GridPlanEvents, GridPlanSlots, GridPlanPlacedItem, GridPlanSelection, GridPlanItemType, GridPlanPoint, GridPlanItem, GridPlanExpose } from "../types";
 
 const Grid3d = defineAsyncComponent(() => import("./Grid3d.vue"));
 
-const props = defineProps({
-  placedItems: {
-    type: Array,
-    default() {
-      return []
-    }
-  },
-  availableTypes: {
-    type: Array,
-    default() {
-      return []
-    }
-  },
-  config: {
-    type: Object,
-    default() {
-      return {}
-    }
-  },
-  readonly: {
-    type: Boolean,
-    default: false
-  }
+const props = withDefaults(defineProps<GridPlanProps>(), {
+  placedItems: () => [], availableTypes: () => [], config: () => ({}), readonly: false,
 });
+defineSlots<GridPlanSlots>();
 
 onMounted(() => {
   if(!props.availableTypes || !props.availableTypes.length) {
@@ -54,120 +35,131 @@ onMounted(() => {
   }
 })
 
-const emit = defineEmits([
-  'change',
-  'delete',
-  'select',
-  'unselect',
-  'created',
-  'selectType'
-])
+const emit = defineEmits<GridPlanEvents>();
 
-const items = ref([]);
+const items = ref<GridPlanPlacedItem[]>([]);
 
-const { placedItems, availableTypes, config } = toRefs(props)
+const { placedItems, availableTypes } = toRefs(props)
 
+const generatedIds = new WeakMap<GridPlanItem, string | number>();
+let previousTypes = new Map(props.availableTypes.map(type => [type.typeId, { ...type }]));
+function syncSelection() {
+  const id = entity.value.id;
+  if (id !== undefined) entity.value = items.value.find(item => item.id === id) ?? {};
+}
 function prepareItems() {
   items.value = props.placedItems.map(item => {
-    const details = props.availableTypes && props.availableTypes.length ? props.availableTypes.find(t => t.typeId === item.typeId) : {}
-    return {
-      ...item,
-      id: item.id ?? createUid(),
-      ...details
-    }
+    const details = props.availableTypes.find(type => type.typeId === item.typeId);
+    const id = item.id ?? generatedIds.get(item) ?? createUid();
+    generatedIds.set(item, id);
+    return { ...item, id, ...details } as GridPlanPlacedItem;
   });
+  syncSelection();
 }
-
 onMounted(prepareItems);
-
-watch([ placedItems, availableTypes, config ], () => {
-  prepareItems();
-  step.value += 1;
+watch(placedItems, prepareItems, { deep: true });
+watch(availableTypes, () => {
+  // A type edit refreshes existing records without reverting geometry or dropping
+  // items created through the editor. Removed type fields fall back to item props.
+  items.value = items.value.map(item => {
+    const original = props.placedItems.find(source => (source.id ?? generatedIds.get(source)) === item.id);
+    const previous = previousTypes.get(item.typeId);
+    const details = props.availableTypes.find(type => type.typeId === item.typeId);
+    const base: GridPlanItem = { ...item };
+    for (const key of Object.keys(previous ?? {})) {
+      if (['id', 'typeId', 'x', 'y', 'w', 'h'].includes(key)) continue;
+      if (original && Object.hasOwn(original, key)) base[key] = original[key];
+      else delete base[key];
+    }
+    const keepDepth = item.depth !== undefined && (original?.depth !== undefined || item.depth !== previous?.depth);
+    return { ...base, ...details, id: item.id, x: item.x, y: item.y, w: item.w, h: item.h,
+      ...(keepDepth ? { depth: item.depth } : {}) } as GridPlanPlacedItem;
+  });
+  syncSelection();
+  activeType.value = props.availableTypes.find(type => type.typeId === activeType.value?.typeId) ?? props.availableTypes[0];
+  previousTypes = new Map(props.availableTypes.map(type => [type.typeId, { ...type }]));
 }, { deep: true });
 
-const finalConfig = computed(() => {
-  return useNestedProp({
-    userConfig: props.config,
-    defaultConfig: defaultConfig
-  })
-})
+const finalConfig = computed(() => resolveConfig(props.config));
 
-function recordChange(entity) {
-  step.value += 1;
+function recordChange(entity: GridPlanPlacedItem) {
+
   emit('change', entity)
 }
 
-const entity = ref({})
+const entity = ref<GridPlanSelection>({})
+watch(() => props.readonly, readonly => {
+  if (readonly) entity.value = {};
+});
 
-const step = ref(0);
 
-function selectItem(item) {
+function selectItem(item: GridPlanPlacedItem) {
+  if (props.readonly) return;
   emit('select', item);
   entity.value = item;
-  step.value += 1;
+
 }
 
-function triggerAction(rect) {
-  items.value.push({
-    ...rect,
-    h: 1,
-    w: 1,
-    id: createUid(),
-    ...activeType.value
-  });
-  emit('created', items.value.at(-1));
-  selectItem(items.value.at(-1))
+function triggerAction(rect: GridPlanPoint) {
+  const item = { ...rect, h: 1, w: 1, id: createUid(), ...activeType.value } as GridPlanPlacedItem;
+  items.value.push(item);
+  emit('created', item);
+  selectItem(item);
 }
 
-const activeType = ref(availableTypes.value[0])
+const activeType = ref<GridPlanItemType | undefined>(availableTypes.value[0])
 
-function setActiveType(t) {
+function setActiveType(t: GridPlanItemType) {
   activeType.value = t;
   emit('selectType', t)
 }
 
-function deleteItem(item) {
+function deleteItem(item: GridPlanPlacedItem) {
   emit('delete', item);
   items.value = items.value.filter(i => i.id !== item.id)
   entity.value = {}
-  step.value += 1
+
 }
 
 function unselect() {
+  if (props.readonly) return;
   emit('unselect');
   entity.value = {}
-  step.value += 1
+
 }
 
-function getItems() {
+function getItems(): GridPlanPlacedItem[] {
   return items.value;
 }
 
-function focusItem(item) {
+function focusItem(item: GridPlanPlacedItem) {
+  if (props.readonly) return;
   if(entity.value.id === item.id) {
     entity.value = {}
-    step.value += 1;
+
   } else {
     entity.value = {}
-    step.value += 1;
+
     entity.value = item
   }
 }
 
-function getFocusState(item) {
+function getFocusState(item: GridPlanItem) {
   return item && item.id === entity.value.id
 }
+
+function getActiveItem(): GridPlanSelection { return entity.value; }
 
 defineExpose({
   deleteItem,
   focusItem,
-  getActiveItem: () => entity.value,
+  getActiveItem,
   getFocusState,
   getItems,
   selectItem,
   setActiveType,
   unselect,
-})
+} satisfies GridPlanExpose)
 
 </script>
 
@@ -231,7 +223,6 @@ defineExpose({
     <Grid
       v-if="finalConfig.showGrid2d"
       :readonly="readonly"
-      :key="`2d_${step}`" 
       :items="items" 
       :active-entity="entity"
       :config="finalConfig"
@@ -253,8 +244,8 @@ defineExpose({
       <slot name="componentIcon" v-bind="slotProps" />
     </template>
 
-    <template #componentText="{ placedItem, availableTypes }">
-      <slot name="componentText" v-bind="{ placedItem, availableTypes }"/>
+    <template #componentText="scope">
+      <slot name="componentText" v-bind="scope"/>
     </template>
   </Grid>
 

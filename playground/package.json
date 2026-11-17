@@ -7,28 +7,29 @@
     "predev": "pnpm --dir .. run build",
     "dev": "node scripts/dev.mjs",
     "prebuild": "pnpm --dir .. run build",
-    "build": "vite build",
+    "build": "pnpm run typecheck && vite build",
     "preview": "vite preview",
     "pretest": "pnpm --dir .. run build",
     "test": "vitest run",
     "test:e2e": "pnpm run build && start-server-and-test 'pnpm run preview' http://localhost:4173 'cypress run --e2e'",
     "test:e2e:dev": "start-server-and-test 'vite --port 4173 --strictPort' http://localhost:4173 'cypress open --e2e'",
-    "pretest:e2e:dev": "pnpm --dir .. run build"
+    "pretest:e2e:dev": "pnpm --dir .. run build",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "bootstrap-icons": "1.13.2",
     "grid-plan": "workspace:*",
-    "three": "0.173.0",
-    "vue": "3.5.22"
+    "three": "0.187.0",
+    "vue": "3.5.45"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "6.0.1",
-    "@vue/test-utils": "2.4.6",
+    "@vitejs/plugin-vue": "6.0.11",
+    "@vue/test-utils": "2.6.0",
     "cypress": "13.12.0",
-    "jsdom": "24.1.0",
+    "jsdom": "31.0.1",
     "start-server-and-test": "2.0.4",
-    "vite": "7.1.9",
-    "vitest": "3.0.5"
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
   },
   "packageManager": "pnpm@12.15.0"
 }

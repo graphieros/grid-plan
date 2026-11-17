@@ -11,7 +11,7 @@ describe('local package integration', () => {
       props: {
         availableTypes: [{ typeId: 1, description: 'Built package', icon: 'server' }],
         placedItems: [{ id: 'built', typeId: 1, x: 1, y: 1, w: 1, h: 1 }],
-        config: { showGrid3d: false, showInventory: false, showMenu: false },
+        config: { showTooltip: false, showGrid3d: false, showInventory: false, showMenu: false },
       },
     });
     await wrapper.vm.$nextTick();

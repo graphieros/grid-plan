@@ -3,7 +3,9 @@ import { mount } from '@vue/test-utils'
 import { h } from 'vue'
 import { PerspectiveCamera, Vector3, TextureLoader, Texture } from 'three'
 import Grid3d from '../Grid3d.vue'
-import config from '../../default_config.json'
+import { resolveConfig } from '../../config'
+import originalDefaults from '../../default_config'
+const config = { ...originalDefaults, showTooltip: false }
 
 const { renderScene } = vi.hoisted(() => ({ renderScene: vi.fn() }))
 
@@ -11,7 +13,7 @@ vi.mock('three', async importOriginal => {
     const actual = await importOriginal()
     return { ...actual, WebGLRenderer: class {
         constructor({ canvas }) { this.domElement = canvas; this.shadowMap = {} }
-        setSize() {} setPixelRatio() {} render(scene, camera) { scene.updateMatrixWorld(); camera.updateMatrixWorld(); renderScene(scene) } dispose() {}
+        setSize() {} setPixelRatio() {} render(scene, camera) { scene.updateMatrixWorld(); camera.updateMatrixWorld(); renderScene(scene, camera, this) } dispose() {}
     } }
 })
 
@@ -48,6 +50,62 @@ async function pointer(type, x, y, z) {
 }
 
 describe('3D editor interactions', () => {
+    test('refreshes the scene palette when the theme changes', async () => {
+        setup()
+        await wrapper.setProps({ config: resolveConfig({ theme: 'light', showTooltip: false, showBox: false }) })
+        const [scene, camera, renderer] = renderScene.mock.calls.at(-1)
+        expect(scene.background.getHexString()).toBe('e2e8f0')
+        expect(scene.children.some(child => child.userData.handle && child.material.color.getHexString() === resolveConfig({ theme: 'light' }).handleFill.slice(1).toLowerCase())).toBe(true)
+        await wrapper.setProps({ config: resolveConfig({ theme: 'dark', showTooltip: false, showBox: false }) })
+        const updated = renderScene.mock.calls.at(-1)
+        expect(updated[1]).toBe(camera)
+        expect(updated[2]).toBe(renderer)
+        expect(updated[0].background.getHexString()).toBe(originalDefaults.coordinatesBackground.slice(1).toLowerCase())
+    })
+
+    test.each([false, true])('supports keyboard focus and readonly-aware selection (readonly: %s)', async readonly => {
+        const item = setup(readonly, { tooltip: ({ item, isSelected }) => h('span', {
+            class: 'keyboard-tooltip', 'data-selected': String(isSelected),
+        }, item.id) })
+        await wrapper.setProps({ activeEntity: {}, items: [item, { ...item, id: 'b', x: 3 }],
+            config: { ...config, showBox: false, showTooltip: true } })
+        const grid = wrapper.find('.grid-plan-grid-3d')
+        await grid.trigger('keydown', { key: 'ArrowRight' })
+        expect(wrapper.find('.keyboard-tooltip').text()).toBe('a')
+        expect(wrapper.emitted('selectItem')).toBeUndefined()
+        await grid.trigger('keydown', { key: 'ArrowLeft' })
+        expect(wrapper.find('.keyboard-tooltip').text()).toBe('b')
+        await grid.trigger('keydown', { key: 'Enter' })
+        if (readonly) expect(wrapper.emitted('selectItem')).toBeUndefined()
+        else expect(wrapper.emitted('selectItem')[0][0].id).toBe('b')
+        await grid.trigger('keydown', { key: 'Escape' })
+        expect(wrapper.find('.keyboard-tooltip').exists()).toBe(readonly)
+        if (readonly) expect(wrapper.emitted('unselect')).toBeUndefined()
+        else expect(wrapper.emitted('unselect')).toHaveLength(1)
+        await grid.trigger('blur')
+        expect(wrapper.find('.keyboard-tooltip').exists()).toBe(false)
+    })
+    test('leaves keyboard input in the depth field alone', async () => {
+        setup()
+        await wrapper.find('input').trigger('keydown', { key: 'ArrowDown' })
+        await wrapper.find('input').trigger('keydown', { key: 'Escape' })
+        expect(wrapper.emitted('selectItem')).toBeUndefined()
+        expect(wrapper.emitted('unselect')).toBeUndefined()
+    })
+
+    test('updates configuration without replacing the renderer or resetting the camera', async () => {
+        setup()
+        const [, liveCamera, renderer] = renderScene.mock.calls.at(-1)
+        liveCamera.position.set(7, 18, 4)
+        await wrapper.setProps({ config: { ...config, showBox: false, handleFill: '#123456', useShadow: false } })
+        const [scene, updatedCamera, updatedRenderer] = renderScene.mock.calls.at(-1)
+        expect(updatedCamera).toBe(liveCamera)
+        expect(updatedRenderer).toBe(renderer)
+        expect(updatedCamera.position.toArray()).toEqual([7, 18, 4])
+        expect(renderer.shadowMap.enabled).toBe(false)
+        expect(scene.children.some(child => child.material?.color?.getHexString() === '123456')).toBe(true)
+    })
+
     test('renders the tooltip slot for a hovered item and falls back to the selected item', async () => {
         const item = setup(true, { tooltip: ({ item, isSelected, coordinates, view }) => h('div', {
             class: 'test-tooltip', 'data-selected': String(isSelected), 'data-view': view,
@@ -65,6 +123,8 @@ describe('3D editor interactions', () => {
         await wrapper.find('canvas').trigger('pointerleave')
         expect(wrapper.find('.grid-plan-tooltip').exists()).toBe(false)
         await wrapper.setProps({ activeEntity: item })
+        expect(wrapper.find('.test-tooltip').exists()).toBe(false)
+        await wrapper.setProps({ readonly: false })
         expect(wrapper.find('.test-tooltip').attributes('data-selected')).toBe('true')
         const scene = renderScene.mock.calls.at(-1)[0]
         expect(scene.children.filter(child => child.element?.classList.contains('grid-plan-grid-3d-hover-info'))).toHaveLength(0)
@@ -152,6 +212,13 @@ describe('3D editor interactions', () => {
         expect(wrapper.emitted('unselect')).toBeUndefined()
         await pointer('pointermove', 0, 1, 0)
         expect(hoverLabels()).toHaveLength(1)
+        if (readonly) {
+            await pointer('pointerdown', 0, 1, 0)
+            await pointer('pointerup', 0, 1, 0)
+            expect(hoverLabels()).toHaveLength(1)
+            expect(wrapper.emitted('selectItem')).toBeUndefined()
+            expect(wrapper.emitted('unselect')).toBeUndefined()
+        }
         await wrapper.find('canvas').trigger('pointerleave')
         expect(hoverLabels()).toHaveLength(0)
     })
@@ -214,6 +281,12 @@ describe('3D editor interactions', () => {
         const item = setup()
         const button = wrapper.find('.grid-plan-grid-3d-delete')
         expect(button.attributes('aria-label')).toBe('Delete item')
+        expect(button.element.style.borderRadius).toBe('0px')
+        expect(button.element.style.position).toBe('absolute')
+        expect(button.element.style.width).toBe(button.element.style.height)
+        expect(['right', 'left', 'top', 'bottom']).toContain(button.attributes('data-position'))
+        expect(wrapper.findAll('.grid-plan-grid-3d-delete')).toHaveLength(1)
+
         await button.trigger('pointerdown')
         await button.trigger('click')
         expect(wrapper.emitted('delete')?.[0]).toEqual([item])
@@ -230,7 +303,10 @@ describe('3D editor interactions', () => {
         setup(readonly)
         await pointer('pointerdown', 0, 1, 0)
         await pointer('pointerup', 0, 1, 0)
-        expect(wrapper.emitted('unselect')).toHaveLength(1)
+        if (readonly) {
+            expect(wrapper.emitted('unselect')).toBeUndefined()
+            expect(wrapper.emitted('selectItem')).toBeUndefined()
+        } else expect(wrapper.emitted('unselect')).toHaveLength(1)
         expect(wrapper.emitted('change')).toBeUndefined()
     })
     test('moves items with pointer capture and emits a single committed change', async () => {
@@ -282,7 +358,7 @@ describe('3D editor interactions', () => {
         await wrapper.find('button').trigger('click')
         expect(wrapper.emitted('delete')?.[0]).toEqual([item])
     })
-    test('readonly disables edits and creation while allowing selection', async () => {
+    test('readonly disables edits, creation and selection', async () => {
         const item = setup(true)
         await pointer('pointerdown', 0, 1, 0)
         await pointer('pointermove', 2, 1, 0)

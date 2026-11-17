@@ -7,12 +7,13 @@ export function createUid() {
         });
 }
 
-export function treeShake({ defaultConfig, userConfig }) {
-    const finalConfig = { ...defaultConfig };
+export function treeShake<T extends object>({ defaultConfig, userConfig }: { defaultConfig: T; userConfig: Partial<T> }): T {
+    const supplied = userConfig as Record<string, unknown>;
+    const finalConfig = { ...defaultConfig } as Record<string, unknown>;
 
     Object.keys(finalConfig).forEach(key => {
-        if (Object.hasOwn(userConfig, key)) {
-            const currentVal = userConfig[key]
+        if (Object.hasOwn(supplied, key)) {
+            const currentVal = supplied[key]
             if (['boolean', 'function'].includes(typeof currentVal)) {
                 finalConfig[key] = currentVal;
             } else if (["string", "number"].includes(typeof currentVal)) {
@@ -20,47 +21,47 @@ export function treeShake({ defaultConfig, userConfig }) {
                     finalConfig[key] = currentVal;
                 }
             } else if (Array.isArray(finalConfig[key])) {
-                if (checkArray({ userConfig, key })) {
+                if (checkArray({ userConfig: supplied, key })) {
                     finalConfig[key] = currentVal;
                 }
-            } else if (checkObj({ userConfig, key })) {
+            } else if (checkObj({ userConfig: supplied, key })) {
                 finalConfig[key] = treeShake({
-                    defaultConfig: finalConfig[key],
-                    userConfig: currentVal
+                    defaultConfig: finalConfig[key] as object,
+                    userConfig: currentVal as object
                 });
             }
         }
     });
-    return finalConfig;
+    return finalConfig as T;
 }
 
-export function isValidUserValue(val) {
-    return ![null, undefined, NaN, Infinity, -Infinity].includes(val);
+export function isValidUserValue(val: unknown) {
+    return ![null, undefined, NaN, Infinity, -Infinity].some(value => Object.is(value, val));
 }
 
-export function isSafeValue(val) {
-    return ![undefined, NaN, Infinity, -Infinity].includes(val)
+export function isSafeValue(val: unknown) {
+    return ![undefined, NaN, Infinity, -Infinity].some(value => Object.is(value, val))
 }
 
-export function checkArray({ userConfig, key }) {
+export function checkArray({ userConfig, key }: { userConfig: Record<string, unknown>; key: string }) {
     return Object.hasOwn(userConfig, key) && Array.isArray(userConfig[key]) && userConfig[key].length >= 0;
 }
 
-export function checkObj({ userConfig, key }) {
+export function checkObj({ userConfig, key }: { userConfig: Record<string, unknown>; key: string }) {
     return Object.hasOwn(userConfig, key) && !Array.isArray(userConfig[key]) && typeof userConfig[key] === "object";
 }
 
-export function useNestedProp({ defaultConfig, userConfig }) {
+export function useNestedProp<T extends object>({ defaultConfig, userConfig }: { defaultConfig: T; userConfig?: Partial<T> }) {
     if (!Object.keys(userConfig || {}).length) {
         return defaultConfig;
     }
     return treeShake({
         defaultConfig: defaultConfig,
-        userConfig
+        userConfig: userConfig ?? {}
     });
 }
 
-export function scaleSVGPath(pathString, divisor, coordinates = { x: 10, y: 3 }) {
+export function scaleSVGPath(pathString: string, divisor: number, coordinates = { x: 10, y: 3 }) {
     if (divisor === 0) {
         throw new Error("Divisor cannot be zero.");
     }
@@ -116,14 +117,14 @@ export function scaleSVGPath(pathString, divisor, coordinates = { x: 10, y: 3 })
     return parts.join('');
 }
 
-export function parseSVG(svgString) {
+export function parseSVG(svgString: string) {
     const pathRegex = /<path([^>]*)\/?>/g;
-    let paths = [];
+    let paths: Record<string, string>[] = [];
     let match;
 
     while ((match = pathRegex.exec(svgString)) !== null) {
         let attributesString = match[1].trim();
-        let pathObj = {};
+        let pathObj: Record<string, string> = {};
         let attributesRegex = /(\S+?)="([^"]*)"/g;
         let attrMatch;
 
@@ -139,8 +140,8 @@ export function parseSVG(svgString) {
     return paths;
 }
 
-export function convertNameColorToHex(colorName) {
-    const colorMap = {
+export function convertNameColorToHex(colorName: string) {
+    const colorMap: Record<string, string> = {
         ALICEBLUE: "#F0F8FF",
         ANTIQUEWHITE: "#FAEBD7",
         AQUA: "#00FFFF",
@@ -286,12 +287,12 @@ export function convertNameColorToHex(colorName) {
     return colorMap[colorName.toUpperCase()] || colorName;
 }
 
-export function decimalToHex(decimal) {
+export function decimalToHex(decimal: number | string) {
     const hex = Number(decimal).toString(16);
     return hex.length === 1 ? "0" + hex : hex;
 }
 
-export function hslToRgba(h, s, l, alpha = 1) {
+export function hslToRgba(h: number, s: number, l: number, alpha = 1) {
     h /= 360;
     s /= 100;
     l /= 100;
@@ -301,7 +302,7 @@ export function hslToRgba(h, s, l, alpha = 1) {
     if (s === 0) {
         r = g = b = l; // Achromatic (gray)
     } else {
-        const hueToRgb = (p, q, t) => {
+        const hueToRgb = (p: number, q: number, t: number) => {
             if (t < 0) t += 1;
             if (t > 1) t -= 1;
             if (t < 1 / 6) return p + (q - p) * 6 * t;
@@ -325,12 +326,12 @@ export function hslToRgba(h, s, l, alpha = 1) {
     ];
 }
 
-export function convertColorToHex(color) {
+export function convertColorToHex(color: string | number | null | undefined) {
     const hexRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i;
     const rgbRegex = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/i;
     const hslRegex = /^hsla?\((\d+),\s*([\d.]+)%,\s*([\d.]+)%(?:,\s*([\d.]+))?\)$/i;
 
-    if ([undefined, null, NaN].includes(color)) {
+    if (typeof color !== 'string') {
         return null;
     }
 

@@ -1,6 +1,7 @@
-<script setup>
-defineProps({ types: { type: Array, required: true }, activeType: [String, Number] });
-defineEmits(['select']);
+<script setup lang="ts">
+import type { GridPlanItemType } from "grid-plan";
+defineProps<{ types: GridPlanItemType[]; activeType: string | number }>();
+defineEmits<{ select: [type: GridPlanItemType] }>();
 </script>
 <template>
   <div class="type-palette" aria-label="Active item type">

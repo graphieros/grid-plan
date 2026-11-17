@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import {
   computed,
   onMounted,
@@ -6,24 +6,22 @@ import {
   ref,
   watchPostEffect,
 } from "vue";
-import defaultConfig from "../default_config.json";
+import { resolveConfig } from "../config";
+import type { GridPlanPlacedItem, GridPlanConfig, GridPlanTooltipSlotProps, GridPlanTooltipPosition } from "../types";
+import type { TooltipAnchor, TooltipLayout } from "../lib/tooltip-position";
+import type { CSSProperties, VNodeChild } from "vue";
 import { positionTooltip } from "../lib/tooltip-position";
-const props = defineProps({
-  item: { type: Object, required: true },
-  config: { type: Object, default: () => ({}) },
-  container: Object,
-  getAnchor: { type: Function, required: true },
-  isSelected: Boolean,
-  coordinates: String,
-  view: String,
-  preferred: { type: String, default: "top" },
-  color: { type: String, default: "#ffffff" },
-  fontFamily: { type: String, default: "Arial" },
-});
+const props = withDefaults(defineProps<{
+  item: GridPlanPlacedItem; config?: GridPlanConfig; container?: HTMLElement | null;
+  getAnchor: () => TooltipAnchor | null; isSelected?: boolean; coordinates?: string;
+  view?: '2d' | '3d'; preferred?: GridPlanTooltipPosition; color?: string; fontFamily?: string;
+}>(), { config: () => ({}), container: null, isSelected: false, coordinates: '', view: '2d',
+  preferred: 'top', color: '#ffffff', fontFamily: 'Arial' });
+defineSlots<{ default?: (scope: GridPlanTooltipSlotProps) => VNodeChild }>();
 
-const element = ref(null);
-const layout = ref(null);
-let frame, observer;
+const element = ref<HTMLDivElement | null>(null);
+const layout = ref<TooltipLayout | null>(null);
+let frame: number, observer: ResizeObserver;
 
 const slotProps = computed(() => ({
   item: props.item,
@@ -32,11 +30,11 @@ const slotProps = computed(() => ({
   view: props.view,
 }));
 
-const cssLength = (value) => (typeof value === "number" ? `${value}px` : value);
+const cssLength = (value: string | number) => (typeof value === "number" ? `${value}px` : value);
 const appearance = computed(() => {
-  const c = { ...defaultConfig, ...props.config };
+  const c = resolveConfig(props.config);
   return {
-    color: props.config.tooltipColor ?? props.color,
+    color: props.config.tooltipColor ?? (props.config.theme ? c.tooltipColor : props.color),
     backgroundColor: c.tooltipBackgroundColor,
     borderRadius: cssLength(c.tooltipBorderRadius),
     lineHeight: c.tooltipLineHeight,
@@ -49,11 +47,11 @@ const appearance = computed(() => {
   };
 });
 
-function constrained(value, limit) {
+function constrained(value: string, limit: number) {
   return value === "none" ? `${limit}px` : `min(${value}, ${limit}px)`;
 }
 
-const style = computed(() => ({
+const style = computed<CSSProperties>(() => ({
   ...appearance.value,
   position: "absolute",
   zIndex: 10,
@@ -154,7 +152,7 @@ watchPostEffect(() => {
 
 onMounted(() => {
   observer = new ResizeObserver(update);
-  observer.observe(element.value);
+  observer.observe(element.value!);
   if (props.container) observer.observe(props.container);
   tick();
 });
@@ -171,6 +169,7 @@ onBeforeUnmount(() => {
     class="grid-plan-tooltip"
     role="tooltip"
     :data-side="layout?.side"
+    :data-position="layout?.side"
     :style="style"
   >
     <slot v-bind="slotProps">
@@ -178,13 +177,6 @@ onBeforeUnmount(() => {
         item.description || "Item"
       }}</strong>
       <div>{{ coordinates }}</div>
-      <div>
-        Size: {{ item.w }} × {{ item.h }} · Depth: {{ item.depth ?? 1 }}
-      </div>
-      <div>
-        Type: {{ item.typeId
-        }}<template v-if="item.id != null"> · ID: {{ item.id }}</template>
-      </div>
     </slot>
   </div>
 </template>

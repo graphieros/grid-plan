@@ -27,9 +27,13 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm run typecheck
+
       - run: pnpm test --run
 
       - run: pnpm run build
+
+      - run: node scripts/typecheck-package.mjs
 
       - name: Publish
         run: |

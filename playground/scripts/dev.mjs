@@ -1,3 +1,5 @@
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { build, createServer } from 'vite';
 
@@ -8,8 +10,13 @@ const playgroundConfig = fileURLToPath(new URL('../vite.config.js', import.meta.
 // the same package exports that a real application uses.
 const watcher = await build({ root: libraryRoot, configFile: libraryConfig,
   build: { watch: {}, emptyOutDir: false } });
+const require = createRequire(import.meta.url);
+const declarations = spawn(process.execPath, [require.resolve('vue-tsc/bin/vue-tsc.js'),
+  '-p', fileURLToPath(new URL('../../tsconfig.build.json', import.meta.url)), '--watch'],
+  { cwd: libraryRoot, stdio: 'inherit' });
 let server;
 async function close() {
+  declarations.kill('SIGTERM');
   await Promise.all([watcher.close(), server?.close()]);
 }
 try {
