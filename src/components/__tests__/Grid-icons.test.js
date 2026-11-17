@@ -50,7 +50,7 @@ describe('item icons', () => {
         })
         await wrapper.vm.$nextTick()
         const check = () => {
-            const icons = wrapper.findAll('svg[aria-hidden="true"]')
+            const icons = wrapper.findAll('svg.grid-plan-component-icon')
             expect(icons).toHaveLength(1)
             expect(icons[0].attributes('viewBox')).toBe(viewBox)
             expect(icons[0].attributes('style')).toContain('color: rgb(255, 0, 0)')
@@ -62,7 +62,7 @@ describe('item icons', () => {
         await wrapper.vm.$nextTick()
         check()
         await wrapper.setProps({ config: { ...wrapper.props('config'), showIcons: false } })
-        expect(wrapper.findAll('svg[aria-hidden="true"]')).toHaveLength(0)
+        expect(wrapper.findAll('svg.grid-plan-component-icon')).toHaveLength(0)
         await wrapper.setProps({ config: { ...wrapper.props('config'), showIcons: true } })
         check()
         wrapper.unmount()

@@ -855,6 +855,7 @@ function getItemFill(item: GridPlanPlacedItem) {
         </svg>
         <svg
           v-if="icon"
+          class="grid-plan-component-icon"
           :x="placedItem.x + placedItem.w / 2 - 0.5"
           :y="placedItem.y + placedItem.h / 2 - 0.5"
           width="1"
