@@ -110,14 +110,12 @@ test("programmatic hints show hover information without selecting and clear on r
 
 async function pointer(type, x, y, z) {
   const point = new Vector3(x, y, z).project(camera);
-  await wrapper
-    .find("canvas")
-    .trigger(type, {
-      button: 0,
-      pointerId: 1,
-      clientX: (point.x + 1) * 400,
-      clientY: (1 - point.y) * 240,
-    });
+  await wrapper.find("canvas").trigger(type, {
+    button: 0,
+    pointerId: 1,
+    clientX: (point.x + 1) * 400,
+    clientY: (1 - point.y) * 240,
+  });
 }
 
 describe("3D editor interactions", () => {

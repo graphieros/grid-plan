@@ -24,22 +24,22 @@ defineSlots<{ default?: (scope: GridPlanMenuSlotProps) => unknown }>();
       {{ title }}
     </summary>
     <div class="grid-plan-menu__body">
-      <button
-        v-for="type in plan.availableTypes"
-        :key="type.typeId"
-        type="button"
-        :disabled="plan.readonly"
-        :aria-pressed="plan.activeType?.typeId === type.typeId"
-        @click="plan.setActiveType(type)"
-      >
+      <div v-for="type in plan.availableTypes" :key="type.typeId">
         <slot
           :available-type="type"
           :is-active="plan.activeType?.typeId === type.typeId"
           :select-type="() => plan.setActiveType(type)"
         >
-          {{ type.description }}
+          <button
+            type="button"
+            :disabled="plan.readonly"
+            :aria-pressed="plan.activeType?.typeId === type.typeId"
+            @click="plan.setActiveType(type)"
+          >
+            {{ type.description }}
+          </button>
         </slot>
-      </button>
+      </div>
     </div>
   </component>
 </template>

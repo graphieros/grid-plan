@@ -8,6 +8,7 @@ import {
   watch,
 } from "vue";
 import { createUid } from "../lib";
+import { canPlace } from "../lib/grid3d-edit";
 import { resolveConfig } from "../config";
 import { useGridCoordinates } from "./useGridCoordinates";
 import type {
@@ -146,13 +147,16 @@ export function useGridPlan(options: GridPlanOptions = {}) {
 
   function triggerAction(rect: GridPlanPoint) {
     if (readonly.value || !activeType.value) return;
+    if (!Number.isSafeInteger(rect.x) || !Number.isSafeInteger(rect.y)) return;
     const item = {
-      ...rect,
+      ...activeType.value,
+      x: rect.x,
+      y: rect.y,
       h: 1,
       w: 1,
       id: createUid(),
-      ...activeType.value,
     } as GridPlanPlacedItem;
+    if (!canPlace(item, items.value, finalConfig.value)) return;
     items.value.push(item);
     emit("created", item);
     selectItem(item);

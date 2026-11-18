@@ -62,9 +62,15 @@ defineExpose({
   <main class="grid-plan-main" style="position: relative">
     <slot name="before" v-bind="layoutScope" />
     <GridPlanMenu v-if="$slots.availableType" :plan="plan">
-      <template #default="scope"
-        ><slot name="availableType" v-bind="scope"
-      /></template>
+      <template #default="scope">
+        <div @click="scope.selectType">
+          <slot
+            name="availableType"
+            :available-type="scope.availableType"
+            :is-active="scope.isActive"
+          />
+        </div>
+      </template>
     </GridPlanMenu>
     <GridPlanInventory v-if="$slots.inventory" :plan="plan">
       <template #default="scope"

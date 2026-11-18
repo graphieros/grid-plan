@@ -149,12 +149,16 @@ Events are `change`, `created`, `delete`, `select`, `unselect`, and `selectType`
 `GridPlan` also forwards these events to its component listeners. Use either
 subscription path for persistence to avoid handling the same action twice.
 Readonly mode blocks creation, deletion, type selection, and item selection;
-non-mutating hover hints remain available. With no available types, creation is a no-op.
+non-mutating hover hints remain available. Creation is a no-op when there are no available types or when coordinates are
+non-integer, outside the grid, or overlap another item. Rejected creation emits no events.
 
 Both controls accept `plan` (required), `title` (defaults to `Menu` or `Inventory`),
 and `accordion` (defaults to `true`). They provide functional default content.
 The menu's default slot receives `availableType`, `isActive`, and `selectType`.
-It renders inside the type button, so use non-interactive content such as a span.
+Custom menu content owns its click handling: render a button with
+`@click="selectType"` and `:disabled="plan.readonly"`. Without a custom slot,
+the menu renders its own buttons. The legacy `GridPlan` `#availableType` slot
+still selects automatically when clicked, and may contain a button or plain text.
 The inventory's default slot receives `item`, `displayCoordinates`, `isFocused`,
 and bound `focusItem`, `deleteItem`, `hintItem`, and `clearHint` actions. Inventory
 rows automatically hint their item on mouse entry and clear it on exit.
@@ -953,3 +957,7 @@ content. See [Shared controller and external controls](#shared-controller-and-ex
 
 Readonly mode now also blocks deletion and type selection through controller
 methods. Item `x` and `y` remain numeric; display-coordinate helpers are optional.
+
+`focusItem(item)` now emits `select` when selecting an item and `unselect` when
+toggling it off. Review existing event handlers to avoid handling the same action
+twice if you also handle it directly where `focusItem()` is called.

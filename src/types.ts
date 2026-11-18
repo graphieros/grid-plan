@@ -179,7 +179,9 @@ export interface GridPlanBeforeSlotProps {
 export interface GridPlanSlots {
   before?: (scope: GridPlanBeforeSlotProps) => VNodeChild;
   after?: (scope: GridPlanBeforeSlotProps) => VNodeChild;
-  availableType?: (scope: GridPlanMenuSlotProps) => VNodeChild;
+  availableType?: (
+    scope: Omit<GridPlanMenuSlotProps, "selectType">,
+  ) => VNodeChild;
   inventory?: (scope: GridPlanInventorySlotProps) => VNodeChild;
   componentIcon?: (scope: GridPlanIconSlotProps) => VNodeChild;
   componentText?: (scope: {

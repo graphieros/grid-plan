@@ -22,8 +22,14 @@ function changed(item: GridPlanPlacedItem) {
 </script>
 <template>
   <GridPlanMenu :plan="controller" :accordion="false">
-    <template #default="{ availableType, isActive }"
-      ><span>{{ availableType.description }} {{ isActive }}</span></template
+    <template #default="{ availableType, isActive, selectType }"
+      ><button
+        :disabled="controller.readonly"
+        :aria-pressed="isActive"
+        @click="selectType"
+      >
+        {{ availableType.description }}
+      </button></template
     >
   </GridPlanMenu>
   <GridPlan :plan="controller" />

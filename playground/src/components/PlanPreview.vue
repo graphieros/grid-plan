@@ -90,15 +90,22 @@ defineExpose({
       Both layouts are hidden. Choose a view above to bring the blueprint back.
     </div>
     <GridPlanMenu :plan="plan">
-      <template #default="{ availableType }"
-        ><span class="menu-type"
-          ><span
-            class="swatch"
-            :style="{ background: availableType.color }"
-          ></span
-          >{{ availableType.description }}</span
-        ></template
-      >
+      <template #default="{ availableType, isActive, selectType }">
+        <button
+          type="button"
+          :disabled="readonly"
+          :aria-pressed="isActive"
+          @click="selectType"
+        >
+          <span class="menu-type"
+            ><span
+              class="swatch"
+              :style="{ background: availableType.color }"
+            ></span
+            >{{ availableType.description }}</span
+          >
+        </button>
+      </template>
     </GridPlanMenu>
     <GridPlanInventory :plan="plan">
       <template

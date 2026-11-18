@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { h, nextTick, ref } from "vue";
+import { effectScope, h, nextTick, ref } from "vue";
 import { mount } from "@vue/test-utils";
 import GridPlan from "../GridPlan.vue";
 import GridPlanMenu from "../GridPlanMenu.vue";
@@ -33,7 +33,7 @@ test("external controls synchronize selection, hints, creation and deletion with
         ]);
     },
   });
-  await wrapper.find("aside button:nth-child(2)").trigger("click");
+  await wrapper.findAll("aside button")[1].trigger("click");
   expect(plan.activeType.typeId).toBe(2);
   plan.createItem({ x: 4, y: 4 });
   await nextTick();
@@ -165,3 +165,82 @@ test("generated IDs remain stable and event forwarding cleans up when grids unmo
   expect(events).not.toHaveBeenCalled();
   wrapper.unmount();
 });
+
+test("creation rejects invalid placements without changing items, selection, or emitting events", () => {
+  const scope = effectScope();
+  try {
+    const plan = scope.run(() =>
+      useGridPlan({
+        placedItems: [{ ...item, x: 0, y: 0 }],
+        availableTypes: types,
+        config: { gridWidth: 2, gridHeight: 2 },
+      }),
+    );
+    const created = vi.fn(),
+      selected = vi.fn();
+    plan.selectItem(plan.items[0]);
+    const active = plan.activeEntity;
+    plan.on("created", created);
+    plan.on("select", selected);
+    for (const point of [
+      { x: 0, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: -1 },
+      { x: 2, y: 0 },
+      { x: 0, y: 2 },
+      { x: 0.5, y: 1 },
+      { x: 1, y: 0.5 },
+      { x: NaN, y: 0 },
+      { x: 0, y: Infinity },
+    ])
+      plan.createItem(point);
+    expect(plan.items).toHaveLength(1);
+    expect(plan.activeEntity).toBe(active);
+    expect(created).not.toHaveBeenCalled();
+    expect(selected).not.toHaveBeenCalled();
+    plan.createItem({ x: 1, y: 1 });
+    expect(plan.items).toHaveLength(2);
+    expect(created).toHaveBeenCalledTimes(1);
+    expect(selected).toHaveBeenCalledTimes(1);
+    expect(plan.activeEntity).toMatchObject({ x: 1, y: 1, w: 1, h: 1 });
+  } finally {
+    scope.stop();
+  }
+});
+
+test.each([false, true])(
+  "custom menu buttons select once without nesting buttons (legacy: %s)",
+  async (legacy) => {
+    const scope = effectScope();
+    const plan = scope.run(() =>
+      useGridPlan({
+        availableTypes: types,
+        config: { showGrid2d: false, showGrid3d: false },
+      }),
+    );
+    const selected = vi.fn();
+    plan.on("selectType", selected);
+    const render = ({ availableType, selectType }) =>
+      h(
+        "button",
+        {
+          type: "button",
+          onClick: selectType,
+        },
+        availableType.description,
+      );
+    const wrapper = mount(legacy ? GridPlan : GridPlanMenu, {
+      props: { plan },
+      slots: legacy ? { availableType: render } : { default: render },
+    });
+    try {
+      expect(wrapper.find("button button").exists()).toBe(false);
+      await wrapper.findAll("button")[1].trigger("click");
+      expect(plan.activeType.typeId).toBe(2);
+      expect(selected).toHaveBeenCalledTimes(1);
+    } finally {
+      wrapper.unmount();
+      scope.stop();
+    }
+  },
+);
