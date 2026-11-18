@@ -69,17 +69,6 @@ export const groups: SettingsGroup[] = [
     hint: "The walls around the 3D blueprint.",
     keys: ["showBox", "boxColor", "boxHeight", "boxThickness"],
   },
-  {
-    title: "Menu & inventory",
-    hint: "Try the component’s built-in menus and slots.",
-    keys: [
-      "showMenu",
-      "useAccordionMenu",
-      "accordionMenuTitle",
-      "showInventory",
-      "inventoryTitle",
-    ],
-  },
 ];
 export const choices: Partial<Record<ConfigKey, readonly string[]>> = {
   theme: ["dark", "light"],

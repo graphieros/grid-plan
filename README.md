@@ -35,7 +35,7 @@ For 2D-only usage, install `grid-plan` and set `showGrid3d` to `false`:
 <GridPlan :config="{ showGrid3d: false }" />
 ```
 
-The 3D layout is enabled by default. To use it, install Three.js:
+The 3D layout is disabled by default. To use it, install Three.js:
 
 ```bash
 pnpm add grid-plan three
@@ -63,12 +63,128 @@ Or you can import it directly in your Vue file:
 </script>
 ```
 
+## Shared controller and external controls
+
+Create one controller with `useGridPlan()` and pass it to any grid, menu, or
+inventory that should share state. Controls can live anywhere in the component
+tree; create a separate controller for each independent plan.
+
+```vue
+<script setup>
+import { ref } from "vue";
+import {
+  GridPlan,
+  GridPlanMenu,
+  GridPlanInventory,
+  useGridPlan,
+} from "grid-plan";
+
+const placedItems = ref([
+  { id: "server-1", typeId: 1, x: 0, y: 0, w: 1, h: 1 },
+]);
+const availableTypes = ref([
+  { typeId: 1, description: "Server", icon: "server" },
+]);
+const config = ref({ showGrid3d: false });
+const readonly = ref(false);
+const plan = useGridPlan({ placedItems, availableTypes, config, readonly });
+
+// Controller events also work when controls are outside GridPlan.
+const stop = plan.on("change", (item) => console.log("Changed item", item));
+// Call stop() to unsubscribe early. Subscriptions clear when its scope is disposed.
+</script>
+
+<template>
+  <aside>
+    <GridPlanMenu :plan="plan" title="Available types" :accordion="false" />
+  </aside>
+  <GridPlan :plan="plan" />
+  <footer>
+    <GridPlanInventory :plan="plan" title="Placed items">
+      <template
+        #default="{
+          item,
+          displayCoordinates,
+          focusItem,
+          deleteItem,
+          isFocused,
+        }"
+      >
+        <span>{{ item.description }} · {{ displayCoordinates.label }}</span>
+        <button :disabled="plan.readonly" @click="focusItem">
+          {{ isFocused ? "Unfocus" : "Focus" }}
+        </button>
+        <button :disabled="plan.readonly" @click="deleteItem">Delete</button>
+      </template>
+    </GridPlanInventory>
+  </footer>
+</template>
+```
+
+`useGridPlan` accepts plain values, refs, or getters for `placedItems`,
+`availableTypes`, `config`, and `readonly`. Pass refs or getters when inputs can
+change. It maintains editable copies of supplied items, stable generated IDs,
+and synchronization with incoming item and type updates. Actions do not mutate
+the original input arrays; persist updates through events as in the example below.
+
+The returned controller is reactive, so use `plan.items`, `plan.activeEntity`,
+`plan.activeType`, `plan.hintedItem`, `plan.availableTypes`, `plan.config`, and
+`plan.readonly` directly, without `.value`. Use the controller methods to perform
+actions rather than assigning these properties.
+
+| Controller method                                        | Behavior                                       |
+| -------------------------------------------------------- | ---------------------------------------------- |
+| `setActiveType(type)`                                    | Choose a supplied type for new items           |
+| `createItem({ x, y })`                                   | Place a 1×1 item of the active type            |
+| `selectItem(item)` / `unselect()`                        | Update shared selection                        |
+| `focusItem(item)`                                        | Toggle shared selection                        |
+| `hintItem(item)` / `hintItem(null)`                      | Show or clear hover feedback without selecting |
+| `deleteItem(item)`                                       | Remove a placed item                           |
+| `recordChange(item)`                                     | Notify consumers after a grid edit             |
+| `displayCoordinates(item)`                               | Get configured axis labels and the range label |
+| `getItems()` / `getActiveItem()` / `getFocusState(item)` | Read current state                             |
+| `on(event, callback)`                                    | Subscribe and return an unsubscribe function   |
+
+Events are `change`, `created`, `delete`, `select`, `unselect`, and `selectType`.
+`GridPlan` also forwards these events to its component listeners. Use either
+subscription path for persistence to avoid handling the same action twice.
+Readonly mode blocks creation, deletion, type selection, and item selection;
+non-mutating hover hints remain available. With no available types, creation is a no-op.
+
+Both controls accept `plan` (required), `title` (defaults to `Menu` or `Inventory`),
+and `accordion` (defaults to `true`). They provide functional default content.
+The menu's default slot receives `availableType`, `isActive`, and `selectType`.
+It renders inside the type button, so use non-interactive content such as a span.
+The inventory's default slot receives `item`, `displayCoordinates`, `isFocused`,
+and bound `focusItem`, `deleteItem`, `hintItem`, and `clearHint` actions. Inventory
+rows automatically hint their item on mouse entry and clear it on exit.
+
+### Existing slots and migration
+
+`GridPlan` still accepts `availableTypes`, `placedItems`, `config`, and `readonly`
+as a convenience for a single grid. When `plan` is supplied, the controller owns
+those inputs and takes precedence over the direct props.
+
+Existing `#availableType` and `#inventory` slots remain available. When detected,
+`GridPlan` renders `GridPlanMenu` and `GridPlanInventory` internally and forwards
+the slot scopes. Without those slots, it renders no built-in controls. Existing
+`#before` and `#after` slots and exposed component-ref methods also remain usable.
+Avoid supplying a legacy control slot if you already render that control externally.
+
+`showMenu`, `showInventory`, `accordionMenuTitle`, `inventoryTitle`, and
+`useAccordionMenu` are no longer grid config properties. Control visibility with
+`v-if` on the standalone controls, and move titles and accordion behavior to their
+`title` and `accordion` props. Omit the corresponding legacy slot to hide an internal
+control. Existing custom slots must disable their own action buttons in readonly mode;
+the controller also guards these actions.
+
 ## Props
 
 | Prop name      | TS type            | Required                            | Description                                                 |
 | -------------- | ------------------ | ----------------------------------- | ----------------------------------------------------------- |
-| availableTypes | GridPlanItemType[] | YES                                 | The types of components that can be placed on the blueprint |
-| placedItems    | GridPlanItem[]     | YES (can be empty)                  | Components already placed on the blueprint                  |
+| plan           | GridPlanController | NO                                  | Shared controller; takes precedence over direct inputs      |
+| availableTypes | GridPlanItemType[] | NO (defaults to empty)              | The types of components that can be placed on the blueprint |
+| placedItems    | GridPlanItem[]     | NO (defaults to empty)              | Components already placed on the blueprint                  |
 | readonly       | boolean            | NO (default: false)                 | Blueprint will be readonly if true                          |
 | config         | GridPlanConfig     | NO (default config will be applied) | Configuration object to customize looks                     |
 
@@ -114,7 +230,6 @@ const placedItems = ref([
 // You can provide a partial config, as missing attributes will use defaults
 const config = ref({
   abscissaType: "alphabetic",
-  accordionMenuTitle: "Menu",
   coordinatesBackground: "#2A2A2A",
   coordinatesColor: "#8A8A8A",
   crosshairBackground: "#4A4A4A",
@@ -136,7 +251,6 @@ const config = ref({
   showGrid3d: true,
   showGrid2d: true,
   tooltipColor: "#FFFFFF",
-  useAccordionMenu: true,
   useGradient: true,
   useShadow: true,
   showBox: true,
@@ -277,6 +391,56 @@ function unselected() {
 </template>
 ```
 
+## Coordinate display and storage
+
+Item `x` and `y` values always remain zero-based numbers. Axis configuration only
+changes display labels; existing item data, events, and the tooltip slot's
+`coordinates` string keep their current behavior.
+
+The `inventory` and `tooltip` slots additionally receive `displayCoordinates`:
+
+```html
+<template #inventory="{ item, displayCoordinates }">
+  <span>{{ displayCoordinates.x }} / {{ displayCoordinates.y }}</span>
+  <span>{{ displayCoordinates.label }}</span>
+  <span>Raw position: {{ item.x }}, {{ item.y }}</span>
+</template>
+```
+
+For `{ x: 1, y: 2, w: 1, h: 1 }` with the default axes, this is
+`{ x: 'B', y: '3', label: 'B-3' }`. Both axis labels are strings. Larger items keep
+the existing range label, for example `B-3, C-4`. The `before` and `after` slots
+receive a `displayCoordinates(item)` function returning the same structure.
+Display values react to axis configuration changes without modifying items.
+
+For backend formats, use the optional exported conversion helpers explicitly:
+
+```js
+import { formatCoordinate, parseCoordinate } from "grid-plan";
+
+// Save alphabetic labels to a backend that expects them.
+const payload = {
+  ...item,
+  x: formatCoordinate(item.x, "alphabetic"), // 1 -> 'B'
+  y: formatCoordinate(item.y, "numeric"), // 2 -> '3'
+};
+
+// Convert stored labels back to numeric positions before passing to GridPlan.
+const placedItem = {
+  ...payload,
+  x: parseCoordinate(payload.x, "alphabetic"), // 'B' -> 1
+  y: parseCoordinate(payload.y, "numeric"), // '3' -> 2
+};
+```
+
+Choose storage formats independently of UI configuration. A backend expecting
+zero-based numbers can keep using `item.x` and `item.y` directly. The helpers use
+one-based numeric labels (`'1'` is position `0`) and alphabetic labels (`'A'` is
+position `0`, `'AA'` is position `26`). Parsing accepts surrounding whitespace and
+lowercase letters. Invalid labels, fractional or negative positions, and values
+outside the supported safe-integer range throw errors. No conversion happens
+automatically when loading or saving data.
+
 ## Config details
 
 All properties are optional. Defaults below use the `dark` theme; `theme: "light"` applies a light palette. Explicit color overrides take precedence over the theme.
@@ -285,7 +449,6 @@ All properties are optional. Defaults below use the `dark` theme; `theme: "light
 | ---------------------------- | -------------------------------- | --------------------- | ------------------------------------------------------------------------------- |
 | theme                        | "dark" OR "light"                | "dark"                | Color theme; explicit configuration overrides its palette                       |
 | abscissaType                 | "alphabetic" OR "numeric"        | "alphabetic"          | Display abscissa coordinates as letters or numbers                              |
-| accordionMenuTitle           | string                           | "Menu"                | Text content of detail summary                                                  |
 | coordinatesBackground        | string                           | "#2A2A2A"             | Background color of the coordinates cells                                       |
 | coordinatesColor             | string                           | "#8A8A8A"             | Text color of the coordinates cells                                             |
 | crosshairBackground          | string                           | "#4A4A4A"             | Background color of the crosshair                                               |
@@ -305,14 +468,11 @@ All properties are optional. Defaults below use the `dark` theme; `theme: "light
 | handleSize                   | number                           | 0.3                   | The handle size                                                                 |
 | iconColor                    | string                           | "#1A1A1A"             | Default item icon and #componentText slot color                                 |
 | showIcons                    | boolean                          | true                  | Show item icons in 2D and 3D, including the componentIcon slot                  |
-| inventoryTitle               | string                           | "Inventory"           | The text content of the inventory details summary element                       |
 | nonSelectedOpacity           | number                           | 0.3                   | The opacity of non selected components when a component is selected             |
 | ordinatesType                | "alphabetic" OR "numeric"        | "numeric"             | Display ordinate coordinates as letters or numbers                              |
 | showCrosshair                | boolean                          | true                  | Show crosshair when hovering available cells                                    |
 | showGrid3d                   | boolean                          | false                 | Show the 3d blueprint                                                           |
 | showGrid2d                   | boolean                          | true                  | Show the 2d blueprint                                                           |
-| showMenu                     | boolean                          | true                  | Show the item type menu                                                         |
-| showInventory                | boolean                          | true                  | Show inventory of placed components inside a details HTML element               |
 | tooltipColor                 | string                           | "#FFFFFF"             | The tooltip text color                                                          |
 | showTooltip                  | boolean                          | true                  | Show item tooltips in both views                                                |
 | tooltipPosition              | "top", "bottom", "left", "right" | "top"                 | Preferred item tooltip placement; flips automatically                           |
@@ -325,7 +485,6 @@ All properties are optional. Defaults below use the `dark` theme; `theme: "light
 | tooltipWidth                 | number OR string                 | "fit-content"         | Tooltip width; numbers are pixels                                               |
 | tooltipMaxWidth              | number OR string                 | 280                   | Tooltip maximum width; numbers are pixels; constrained to the map               |
 | tooltipMaxHeight             | number OR string                 | 400                   | Tooltip maximum height; numbers are pixels; constrained to the map              |
-| useAccordionMenu             | boolean                          | true                  | Display the menu inside a details HTML element                                  |
 | useGradient                  | boolean                          | true                  | Shows 2D components with a subtle gradient                                      |
 | useShadow                    | boolean                          | true                  | Show selected item with a drop shadow                                           |
 | showBox                      | boolean                          | true                  | Show a 'wall' around the grid                                                   |
@@ -543,9 +702,9 @@ To customize the styling of the menu and inventory, target the following css cla
 .grid-plan-menu {
 }
 .grid-plan-menu__summary {
-} /* If useAccordionMenu is true */
+} /* If the menu accordion prop is true */
 .grid-plan-menu__body {
-} /* If useAccordionMenu is true */
+} /* If the menu accordion prop is true */
 .grid-plan-inventory {
 }
 .grid-plan-inventory__summary {
@@ -761,3 +920,36 @@ Pass only the settings you want to override. Spreading `defaultConfig` into a
 light config also explicitly overrides its palette with the dark defaults.
 For a complete configuration with the chosen theme applied, use
 `resolveConfig({ theme: 'light' })`, exported by `grid-plan`.
+
+### Programmatic item hover
+
+Call `hintItem(item)` on a GridPlan component ref with the same item object accepted
+by `focusItem`. It shows the item's hover feedback in the 2D and 3D views without
+selecting it or emitting selection events, including in readonly mode. Call
+`hintItem(null)` to clear the hint. Pointer hover takes priority over the hint.
+
+```js
+planRef.value.hintItem(planRef.value.getItems()[0]);
+planRef.value.hintItem(null);
+```
+
+## Migrating from v3 to v4
+
+Existing `GridPlan` props, ref methods, and slots remain available. The
+`#availableType` and `#inventory` slots now render the standalone controls internally;
+without these slots, no internal menu or inventory is rendered.
+
+Remove these grid config properties:
+
+| v3 config                              | v4 replacement                                                    |
+| -------------------------------------- | ----------------------------------------------------------------- |
+| `showMenu`, `showInventory`            | Omit the corresponding slot, or use `v-if` on standalone controls |
+| `accordionMenuTitle`, `inventoryTitle` | `title` prop on `GridPlanMenu` / `GridPlanInventory`              |
+| `useAccordionMenu`                     | `accordion` prop on `GridPlanMenu`                                |
+
+For external controls, create a shared controller with `useGridPlan()` and pass
+it as `:plan` to the grid, menu, and inventory. Use their default slots for custom
+content. See [Shared controller and external controls](#shared-controller-and-external-controls).
+
+Readonly mode now also blocks deletion and type selection through controller
+methods. Item `x` and `y` remain numeric; display-coordinate helpers are optional.

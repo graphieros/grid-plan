@@ -1,0 +1,7 @@
+**/node_modules/
+**/dist/
+**/coverage/
+**/cypress/screenshots/
+**/cypress/videos/
+**/cypress/downloads/
+pnpm-lock.yaml

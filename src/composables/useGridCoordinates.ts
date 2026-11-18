@@ -1,31 +1,24 @@
-import { computed } from 'vue';
-import type { GridPlanResolvedConfig, GridPlanPlacedItem } from '../types';
-
-function numberToLetters(num: number) {
-  let letters = '';
-  while (num > 0) {
-    letters = String.fromCharCode(65 + (num - 1) % 26) + letters;
-    num = Math.floor((num - 1) / 26);
-  }
-  return letters;
-}
+import { computed } from "vue";
+import { formatCoordinate } from "../lib/coordinates";
+import type { GridPlanResolvedConfig, GridPlanPlacedItem } from "../types";
 
 export function useGridCoordinates(config: () => GridPlanResolvedConfig) {
   const gridCoordinates = computed(() => {
     const c = config();
     const axis = (size: number, alphabetic: boolean) => {
       const labels: (string | number)[] = [];
-      for (let i = 1; i <= size; i++) labels.push(alphabetic ? numberToLetters(i) : i);
+      for (let i = 1; i <= size; i++)
+        labels.push(alphabetic ? formatCoordinate(i - 1, "alphabetic") : i);
       return labels;
     };
     return {
-      abs: axis(c.gridWidth, c.abscissaType === 'alphabetic'),
-      ord: axis(c.gridHeight, c.ordinatesType === 'alphabetic'),
+      abs: axis(c.gridWidth, c.abscissaType === "alphabetic"),
+      ord: axis(c.gridHeight, c.ordinatesType === "alphabetic"),
     };
   });
 
   function itemCoordinates(item: GridPlanPlacedItem | null | undefined) {
-    if (!item) return '';
+    if (!item) return "";
     const { abs, ord } = gridCoordinates.value;
     const start = `${abs[item.x]}-${ord[item.y]}`;
     return item.h === 1 && item.w === 1
@@ -33,5 +26,14 @@ export function useGridCoordinates(config: () => GridPlanResolvedConfig) {
       : `${start}, ${abs[item.x + item.w - 1]}-${ord[item.y + item.h - 1]}`;
   }
 
-  return { gridCoordinates, itemCoordinates };
+  function displayCoordinates(item: GridPlanPlacedItem) {
+    const { abs, ord } = gridCoordinates.value;
+    return {
+      x: String(abs[item.x]),
+      y: String(ord[item.y]),
+      label: itemCoordinates(item),
+    };
+  }
+
+  return { gridCoordinates, itemCoordinates, displayCoordinates };
 }

@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "strict": true, "skipLibCheck": false, "noEmit": true,
-    "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": []
+    "strict": true,
+    "skipLibCheck": false,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": []
   },
   "include": ["consumer.ts", "Consumer.vue"]
 }

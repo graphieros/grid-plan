@@ -3,11 +3,15 @@ import type {
   GridPlanResolvedConfig,
   GridPlanPlacedItem,
   GridPlanItemType,
-  GridPlanExpose,
 } from "grid-plan";
 import type { ViewMode } from "../types";
-import { ref } from "vue";
-import { GridPlan } from "grid-plan";
+import { onMounted } from "vue";
+import {
+  GridPlan,
+  GridPlanMenu,
+  GridPlanInventory,
+  useGridPlan,
+} from "grid-plan";
 import PreviewToolbar from "./PreviewToolbar.vue";
 import TypePalette from "./TypePalette.vue";
 import { libraryIcons } from "../data/items";
@@ -39,14 +43,20 @@ const emit = defineEmits<{
   unselect: [];
   selectType: [type: GridPlanItemType];
 }>();
-const plan = ref<GridPlanExpose | null>(null);
+const plan = useGridPlan({
+  placedItems: () => props.items,
+  availableTypes: () => props.types,
+  config: () => props.config,
+  readonly,
+});
 function initializeType() {
   const type = props.types.find((type) => type.typeId === props.activeType);
-  if (type) plan.value?.setActiveType(type);
+  if (type) plan.setActiveType(type);
 }
+onMounted(initializeType);
 defineExpose({
-  setActiveType: (type: GridPlanItemType) => plan.value?.setActiveType(type),
-  unselect: () => plan.value?.unselect(),
+  setActiveType: (type: GridPlanItemType) => plan.setActiveType(type),
+  unselect: () => plan.unselect(),
 });
 </script>
 <template>
@@ -79,14 +89,41 @@ defineExpose({
     <div v-if="view === 'none'" class="empty">
       Both layouts are hidden. Choose a view above to bring the blueprint back.
     </div>
+    <GridPlanMenu :plan="plan">
+      <template #default="{ availableType }"
+        ><span class="menu-type"
+          ><span
+            class="swatch"
+            :style="{ background: availableType.color }"
+          ></span
+          >{{ availableType.description }}</span
+        ></template
+      >
+    </GridPlanMenu>
+    <GridPlanInventory :plan="plan">
+      <template
+        #default="{
+          item,
+          displayCoordinates,
+          deleteItem,
+          focusItem,
+          isFocused,
+        }"
+      >
+        <div class="inventory-item" :class="{ focused: isFocused }">
+          <span class="swatch" :style="{ background: item.color }"></span
+          ><strong>{{ item.description }}</strong
+          ><span
+            >{{ displayCoordinates.label }} · {{ item.w }} × {{ item.h }}</span
+          ><button @click="focusItem">
+            {{ isFocused ? "Unfocus" : "Focus" }}</button
+          ><button :disabled="readonly" @click="deleteItem">Delete</button>
+        </div>
+      </template>
+    </GridPlanInventory>
     <div class="blueprint">
       <GridPlan
-        ref="plan"
-        :config="config"
-        :readonly="readonly"
-        :placed-items="items"
-        :available-types="types"
-        @vue:mounted="initializeType"
+        :plan="plan"
         @change="emit('change', $event)"
         @created="emit('created', $event)"
         @delete="emit('delete', $event)"
@@ -106,28 +143,7 @@ defineExpose({
               max-height: none;
               overflow: visible;
             "
-            >{{ JSON.stringify(scope, null, 2) }}</pre
-          >
-        </template>
-        <template #availableType="{ availableType }"
-          ><span class="menu-type"
-            ><span
-              class="swatch"
-              :style="{ background: availableType.color }"
-            ></span
-            >{{ availableType.description }}</span
-          ></template
-        >
-        <template #inventory="{ item, deleteItem, focusItem, isFocused }">
-          <div class="inventory-item" :class="{ focused: isFocused }">
-            <span class="swatch" :style="{ background: item.color }"></span
-            ><strong>{{ item.description }}</strong
-            ><span
-              >{{ item.x }}, {{ item.y }} · {{ item.w }} × {{ item.h }}</span
-            ><button @click="focusItem">
-              {{ isFocused ? "Unfocus" : "Focus" }}</button
-            ><button :disabled="readonly" @click="deleteItem">Delete</button>
-          </div>
+            >{{ JSON.stringify(scope, null, 2) }}</pre>
         </template>
         <template
           v-if="useIconLibrary"

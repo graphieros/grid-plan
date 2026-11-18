@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { useGridCoordinates } from "../composables/useGridCoordinates";
-import {
-  computed,
-  ref,
-  watchPostEffect,
-  watch,
-} from "vue";
+import { computed, ref, watchPostEffect, watch } from "vue";
 import type {
   GridViewProps,
   GridViewEvents,
@@ -79,17 +74,47 @@ function convertElementsToIndividualWalls(element: GridPlanPlacedItem[]) {
   return walls;
 }
 
-const { gridCoordinates, itemCoordinates } = useGridCoordinates(() => props.config);
+const { gridCoordinates, itemCoordinates } = useGridCoordinates(
+  () => props.config,
+);
 
 // Keep all four borders in the same order and use one SVG cell template.
 const coordinateCells = computed(() => {
   const { abs, ord } = gridCoordinates.value;
   const { gridWidth, gridHeight } = props.config;
   return [
-    ...abs.map((label, x) => ({ label, x, y: -1, textX: x + 0.5, textY: -0.3, anchor: 'middle' })),
-    ...abs.map((label, x) => ({ label, x, y: gridHeight, textX: x + 0.5, textY: gridHeight + 0.7, anchor: 'middle' })),
-    ...ord.map((label, y) => ({ label, x: -1, y, textX: -0.1, textY: y + 0.7, anchor: 'end' })),
-    ...ord.map((label, y) => ({ label, x: gridWidth, y, textX: gridWidth + 0.1, textY: y + 0.7, anchor: 'start' })),
+    ...abs.map((label, x) => ({
+      label,
+      x,
+      y: -1,
+      textX: x + 0.5,
+      textY: -0.3,
+      anchor: "middle",
+    })),
+    ...abs.map((label, x) => ({
+      label,
+      x,
+      y: gridHeight,
+      textX: x + 0.5,
+      textY: gridHeight + 0.7,
+      anchor: "middle",
+    })),
+    ...ord.map((label, y) => ({
+      label,
+      x: -1,
+      y,
+      textX: -0.1,
+      textY: y + 0.7,
+      anchor: "end",
+    })),
+    ...ord.map((label, y) => ({
+      label,
+      x: gridWidth,
+      y,
+      textX: gridWidth + 0.1,
+      textY: y + 0.7,
+      anchor: "start",
+    })),
   ];
 });
 
@@ -99,12 +124,16 @@ const walls = computed(() =>
   ),
 );
 
-const entity = computed<GridPlanSelection>(() => props.readonly ? {} : props.activeEntity);
+const entity = computed<GridPlanSelection>(() =>
+  props.readonly ? {} : props.activeEntity,
+);
 const { focusedItem, clearKeyboardFocus, onKeyDown } = useItemKeyboard({
-  items: () => props.items, selected: () => entity.value, readonly: () => props.readonly,
-  select: selectItem, unselect,
+  items: () => props.items,
+  selected: () => entity.value,
+  readonly: () => props.readonly,
+  select: selectItem,
+  unselect,
 });
-
 
 const inactiveItems = computed(() =>
   props.items.filter(
@@ -301,25 +330,37 @@ function resizeEntity(coordinates: GridPlanPoint) {
 }
 
 const deleteButtonFocused = ref(false);
-watch(() => entity.value.id, () => { deleteButtonFocused.value = false; });
+watch(
+  () => entity.value.id,
+  () => {
+    deleteButtonFocused.value = false;
+  },
+);
 const deleteButtonPosition = computed(() => {
   const item = entity.value;
   if (!isPlacedItem(item)) return null;
-  return positionDeleteButton({ left: item.x, top: item.y, right: item.x + item.w, bottom: item.y + item.h },
-    { width: width.value, height: height.value }, 0.65, props.config.handleSize / 2 + 0.12);
+  return positionDeleteButton(
+    {
+      left: item.x,
+      top: item.y,
+      right: item.x + item.w,
+      bottom: item.y + item.h,
+    },
+    { width: width.value, height: height.value },
+    0.65,
+    props.config.handleSize / 2 + 0.12,
+  );
 });
 
 function deleteEntity() {
   if (isPlacedItem(entity.value)) emit("delete", entity.value);
 }
 
-
-
 const hoveredItem = ref<GridPlanPlacedItem | null>(null);
 const gridContainer = ref<HTMLElement | null>(null);
 
 const hoveredEntity = computed(() => {
-  const id = hoveredItem.value?.id;
+  const id = (hoveredItem.value ?? props.hintedItem)?.id;
   if (id === undefined) return null;
   if (entity.value.id === id && isPlacedItem(entity.value)) return entity.value;
   return props.items.find((item) => item.id === id) ?? null;
@@ -344,7 +385,9 @@ const hoverCornerPaths = computed(() => {
 
 const tooltipItem = computed(
   () =>
-    focusedItem.value ?? hoveredEntity.value ?? (entity.value.x !== undefined ? entity.value : null),
+    focusedItem.value ??
+    hoveredEntity.value ??
+    (entity.value.x !== undefined ? entity.value : null),
 );
 
 function tooltipAnchor() {
@@ -390,7 +433,11 @@ const infoItems = computed(() => {
     result.push(hoveredEntity.value);
   }
 
-  if (focusedItem.value && !result.some(item => item.id === focusedItem.value?.id)) result.push(focusedItem.value);
+  if (
+    focusedItem.value &&
+    !result.some((item) => item.id === focusedItem.value?.id)
+  )
+    result.push(focusedItem.value);
   return result;
 });
 
@@ -446,14 +493,25 @@ const viewport = computed(() => {
     labelWidth.value / 2 + 0.25,
     (props.config.handleSize ?? 0.3) / 2 + 0.25,
   );
-  const top = Math.max(2, (props.config.handleSize ?? 0.3) / 2 + 0.25)
-    + Math.max(0, -props.config.itemNameOffsetY, -props.config.itemCoordinatesOffsetY);
-  const bottom = Math.max(
-    2,
-    1.8 +
-      itemNameFontSizeRatio.value +
-      itemCoordinatesFontSizeRatio.value * 1.3,
-  ) + Math.max(0, props.config.itemNameOffsetY, props.config.itemCoordinatesOffsetY);
+  const top =
+    Math.max(2, (props.config.handleSize ?? 0.3) / 2 + 0.25) +
+    Math.max(
+      0,
+      -props.config.itemNameOffsetY,
+      -props.config.itemCoordinatesOffsetY,
+    );
+  const bottom =
+    Math.max(
+      2,
+      1.8 +
+        itemNameFontSizeRatio.value +
+        itemCoordinatesFontSizeRatio.value * 1.3,
+    ) +
+    Math.max(
+      0,
+      props.config.itemNameOffsetY,
+      props.config.itemCoordinatesOffsetY,
+    );
   return `${-horizontal} ${-top} ${width.value + horizontal * 2} ${height.value + top + bottom}`;
 });
 
@@ -557,9 +615,15 @@ function getItemFill(item: GridPlanPlacedItem) {
           :y="cell.y"
           :height="1"
           :width="1"
-          :fill="!readonly && config.showCrosshair !== false && !isDown && hoveredRect && (cell.x === hoveredRect.x || cell.y === hoveredRect.y)
-            ? config.crosshairBackground
-            : config.coordinatesBackground"
+          :fill="
+            !readonly &&
+            config.showCrosshair !== false &&
+            !isDown &&
+            hoveredRect &&
+            (cell.x === hoveredRect.x || cell.y === hoveredRect.y)
+              ? config.crosshairBackground
+              : config.coordinatesBackground
+          "
           :stroke="config.gridStroke"
           :stroke-width="config.gridStrokeWidth"
         />
@@ -567,9 +631,14 @@ function getItemFill(item: GridPlanPlacedItem) {
           :x="cell.textX"
           :y="cell.textY"
           :text-anchor="cell.anchor"
-          :fill="!readonly && !isDown && hoveredRect && (cell.x === hoveredRect.x || cell.y === hoveredRect.y)
-            ? config.gridHighlightColor
-            : config.coordinatesColor"
+          :fill="
+            !readonly &&
+            !isDown &&
+            hoveredRect &&
+            (cell.x === hoveredRect.x || cell.y === hoveredRect.y)
+              ? config.gridHighlightColor
+              : config.coordinatesColor
+          "
           font-size="0.5"
           style="user-select: none"
         >
@@ -801,13 +870,28 @@ function getItemFill(item: GridPlanPlacedItem) {
         </svg>
       </g>
 
-      <g v-if="hoverCornerPaths.length" class="grid-plan-hover-corners"
-        fill="none" :stroke="config.handleFill" stroke-width="0.06"
-        stroke-linecap="square" style="pointer-events: none" aria-hidden="true">
+      <g
+        v-if="hoverCornerPaths.length"
+        class="grid-plan-hover-corners"
+        fill="none"
+        :stroke="config.handleFill"
+        stroke-width="0.06"
+        stroke-linecap="square"
+        style="pointer-events: none"
+        aria-hidden="true"
+      >
         <g :stroke="config.gridFill" stroke-width="0.1">
-          <path v-for="(path, index) in hoverCornerPaths" :key="index" :d="path" />
+          <path
+            v-for="(path, index) in hoverCornerPaths"
+            :key="index"
+            :d="path"
+          />
         </g>
-        <path v-for="(path, index) in hoverCornerPaths" :key="index" :d="path" />
+        <path
+          v-for="(path, index) in hoverCornerPaths"
+          :key="index"
+          :d="path"
+        />
       </g>
 
       <!-- HANDLES -->
@@ -863,27 +947,71 @@ function getItemFill(item: GridPlanPlacedItem) {
       </g>
 
       <!-- BUTTONS -->
-      <g v-if="!readonly && entity.x !== undefined && deleteButtonPosition" class="grid-plan-delete-control"
+      <g
+        v-if="!readonly && entity.x !== undefined && deleteButtonPosition"
+        class="grid-plan-delete-control"
         :data-position="deleteButtonPosition.side"
-        :transform="`translate(${deleteButtonPosition.x} ${deleteButtonPosition.y})`">
-        <rect class="grid-plan-delete-button" x="0" y="0" width="0.65" height="0.65"
+        :transform="`translate(${deleteButtonPosition.x} ${deleteButtonPosition.y})`"
+      >
+        <rect
+          class="grid-plan-delete-button"
+          x="0"
+          y="0"
+          width="0.65"
+          height="0.65"
           :fill="config.theme === 'light' ? '#475569CC' : '#CCCCCC66'"
-          :stroke="config.handleFill" :stroke-width="deleteButtonFocused ? 0.07 : 0.025"
-          @focus="deleteButtonFocused = true" @blur="deleteButtonFocused = false"
-          role="button" tabindex="0" @keydown.enter.stop.prevent="deleteEntity"
-          @keydown.space.stop.prevent="deleteEntity" :aria-label="`Delete ${entity.description ?? 'item'}`"
+          :stroke="config.handleFill"
+          :stroke-width="deleteButtonFocused ? 0.07 : 0.025"
+          @focus="deleteButtonFocused = true"
+          @blur="deleteButtonFocused = false"
+          role="button"
+          tabindex="0"
+          @keydown.enter.stop.prevent="deleteEntity"
+          @keydown.space.stop.prevent="deleteEntity"
+          :aria-label="`Delete ${entity.description ?? 'item'}`"
           @mousedown.stop.prevent
-          @click.stop="deleteEntity" style="cursor: pointer; outline: none; outline-width: 0" />
-        <foreignObject v-if="slots.deleteIcon" x="0.13" y="0.13" width="0.39" height="0.39"
-          style="pointer-events: none; overflow: hidden">
-          <div style="display: grid; place-items: center; width: 100%; height: 100%; color: white">
+          @click.stop="deleteEntity"
+          style="cursor: pointer; outline: none; outline-width: 0"
+        />
+        <foreignObject
+          v-if="slots.deleteIcon"
+          x="0.13"
+          y="0.13"
+          width="0.39"
+          height="0.39"
+          style="pointer-events: none; overflow: hidden"
+        >
+          <div
+            style="
+              display: grid;
+              place-items: center;
+              width: 100%;
+              height: 100%;
+              color: white;
+            "
+          >
             <slot name="deleteIcon" :item="entity" />
           </div>
         </foreignObject>
-        <svg v-else x="0.13" y="0.13" width="0.39" height="0.39" viewBox="0 0 24 24"
-          aria-hidden="true" focusable="false" style="pointer-events: none">
-          <path d="M3 6H21 M9 6V3H15V6 M5 6L6 21H18L19 6 M10 10V17 M14 10V17" stroke="white" stroke-width="2" fill="none"
-            stroke-linecap="round" stroke-linejoin="round" />
+        <svg
+          v-else
+          x="0.13"
+          y="0.13"
+          width="0.39"
+          height="0.39"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          focusable="false"
+          style="pointer-events: none"
+        >
+          <path
+            d="M3 6H21 M9 6V3H15V6 M5 6L6 21H18L19 6 M10 10V17 M14 10V17"
+            stroke="white"
+            stroke-width="2"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </g>
 
@@ -900,10 +1028,19 @@ function getItemFill(item: GridPlanPlacedItem) {
         {{ highlightedCoordinates }}
       </text>
 
-      <rect v-if="focusedItem" class="grid-plan-keyboard-focus"
-        :x="focusedItem.x" :y="focusedItem.y" :width="focusedItem.w" :height="focusedItem.h"
-        fill="none" :stroke="config.gridHighlightColor" :stroke-width="config.gridStrokeWidth * 2 + 0.04"
-        stroke-dasharray="0.15 0.1" style="pointer-events: none" />
+      <rect
+        v-if="focusedItem"
+        class="grid-plan-keyboard-focus"
+        :x="focusedItem.x"
+        :y="focusedItem.y"
+        :width="focusedItem.w"
+        :height="focusedItem.h"
+        fill="none"
+        :stroke="config.gridHighlightColor"
+        :stroke-width="config.gridStrokeWidth * 2 + 0.04"
+        stroke-dasharray="0.15 0.1"
+        style="pointer-events: none"
+      />
 
       <g
         v-for="infoItem in infoItems"
@@ -913,7 +1050,11 @@ function getItemFill(item: GridPlanPlacedItem) {
       >
         <text
           :x="infoItem.x + infoItem.w - infoItem.w / 2"
-          :y="itemInfoTop(infoItem) + itemNameFontSizeRatio + config.itemNameOffsetY"
+          :y="
+            itemInfoTop(infoItem) +
+            itemNameFontSizeRatio +
+            config.itemNameOffsetY
+          "
           :font-size="itemNameFontSizeRatio"
           :fill="config.tooltipColor"
           :stroke="config.theme === 'light' ? 'transparent' : 'black'"
@@ -962,4 +1103,3 @@ function getItemFill(item: GridPlanPlacedItem) {
     </ItemTooltip>
   </div>
 </template>
-

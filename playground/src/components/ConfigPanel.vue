@@ -20,10 +20,13 @@ const filteredGroups = computed(() =>
     .filter((group) => group.keys.length),
 );
 function updateSetting(key: ConfigKey, value: ConfigValue) {
-  if (key === 'theme' && (value === 'dark' || value === 'light')) {
+  if (key === "theme" && (value === "dark" || value === "light")) {
     const previous = resolveConfig({ theme: config.value.theme });
-    const overrides = Object.fromEntries(Object.entries(config.value).filter(([key, setting]) =>
-      setting !== previous[key as ConfigKey]));
+    const overrides = Object.fromEntries(
+      Object.entries(config.value).filter(
+        ([key, setting]) => setting !== previous[key as ConfigKey],
+      ),
+    );
     config.value = resolveConfig({ ...overrides, theme: value });
   } else config.value = { ...config.value, [key]: value };
 }

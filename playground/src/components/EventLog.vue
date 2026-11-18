@@ -15,8 +15,9 @@ defineEmits<{ clear: [] }>();
     <div class="event-list">
       <details v-for="event in events" :key="event.id">
         <summary>
-          <span class="event-name">{{ event.name }}</span
-          ><time>{{ event.time }}</time>
+          <span class="event-name">{{ event.name }}</span><time>{{
+            event.time
+          }}</time>
         </summary>
         <pre>{{ event.detail }}</pre>
       </details>

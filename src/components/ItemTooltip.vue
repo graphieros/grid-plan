@@ -6,35 +6,67 @@ import {
   ref,
   watchPostEffect,
 } from "vue";
+import { useGridCoordinates } from "../composables/useGridCoordinates";
 import { resolveConfig } from "../config";
-import type { GridPlanPlacedItem, GridPlanConfig, GridPlanTooltipSlotProps, GridPlanTooltipPosition } from "../types";
+import type {
+  GridPlanPlacedItem,
+  GridPlanConfig,
+  GridPlanTooltipSlotProps,
+  GridPlanTooltipPosition,
+} from "../types";
 import type { TooltipAnchor, TooltipLayout } from "../lib/tooltip-position";
 import type { CSSProperties, VNodeChild } from "vue";
 import { positionTooltip } from "../lib/tooltip-position";
-const props = withDefaults(defineProps<{
-  item: GridPlanPlacedItem; config?: GridPlanConfig; container?: HTMLElement | null;
-  getAnchor: () => TooltipAnchor | null; isSelected?: boolean; coordinates?: string;
-  view?: '2d' | '3d'; preferred?: GridPlanTooltipPosition; color?: string; fontFamily?: string;
-}>(), { config: () => ({}), container: null, isSelected: false, coordinates: '', view: '2d',
-  preferred: 'top', color: '#ffffff', fontFamily: 'Arial' });
+const props = withDefaults(
+  defineProps<{
+    item: GridPlanPlacedItem;
+    config?: GridPlanConfig;
+    container?: HTMLElement | null;
+    getAnchor: () => TooltipAnchor | null;
+    isSelected?: boolean;
+    coordinates?: string;
+    view?: "2d" | "3d";
+    preferred?: GridPlanTooltipPosition;
+    color?: string;
+    fontFamily?: string;
+  }>(),
+  {
+    config: () => ({}),
+    container: null,
+    isSelected: false,
+    coordinates: "",
+    view: "2d",
+    preferred: "top",
+    color: "#ffffff",
+    fontFamily: "Arial",
+  },
+);
 defineSlots<{ default?: (scope: GridPlanTooltipSlotProps) => VNodeChild }>();
 
 const element = ref<HTMLDivElement | null>(null);
 const layout = ref<TooltipLayout | null>(null);
 let frame: number, observer: ResizeObserver;
 
+const { displayCoordinates } = useGridCoordinates(() =>
+  resolveConfig(props.config),
+);
+
 const slotProps = computed(() => ({
   item: props.item,
   isSelected: props.isSelected,
   coordinates: props.coordinates,
+  displayCoordinates: displayCoordinates(props.item),
   view: props.view,
 }));
 
-const cssLength = (value: string | number) => (typeof value === "number" ? `${value}px` : value);
+const cssLength = (value: string | number) =>
+  typeof value === "number" ? `${value}px` : value;
 const appearance = computed(() => {
   const c = resolveConfig(props.config);
   return {
-    color: props.config.tooltipColor ?? (props.config.theme ? c.tooltipColor : props.color),
+    color:
+      props.config.tooltipColor ??
+      (props.config.theme ? c.tooltipColor : props.color),
     backgroundColor: c.tooltipBackgroundColor,
     borderRadius: cssLength(c.tooltipBorderRadius),
     lineHeight: c.tooltipLineHeight,

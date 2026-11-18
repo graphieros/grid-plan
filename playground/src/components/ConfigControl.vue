@@ -6,7 +6,11 @@ import { defaultConfig, resolveConfig } from "grid-plan";
 import { choices, numbers, label } from "../data/settings";
 const props = defineProps<{ name: ConfigKey; theme: GridPlanTheme }>();
 const value = defineModel<ConfigValue>({ required: true });
-const original = computed(() => props.name === 'theme' ? defaultConfig.theme : resolveConfig({ theme: props.theme })[props.name]);
+const original = computed(() =>
+  props.name === "theme"
+    ? defaultConfig.theme
+    : resolveConfig({ theme: props.theme })[props.name],
+);
 const isColor = computed(
   () => typeof original.value === "string" && original.value.startsWith("#"),
 );
